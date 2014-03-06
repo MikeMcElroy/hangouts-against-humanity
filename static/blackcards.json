@@ -20,7 +20,7 @@
   { "text": "What's a girl's best friend?", "respondWith" : "1" },
   { "text": "TSA guidelines now prohibit _______ on airplanes.", "respondWith" : "1" },
   { "text": "_______. That's how I want to die.", "respondWith" : "1" },
-  { "text": "For my next trick, I will pull _______ out of _______.", "respondWith" : "1" },
+  { "text": "For my next trick, I will pull _______ out of _______.", "respondWith" : "2" },
   { "text": "In the new Disney Channel Original Movie, Hannah Montana struggles with _______ for the first time.", "respondWith" : "1" },
-  { "text": "_______ is a slippery slope that leads to _______.", "respondWith" : "1" }
+  { "text": "_______ is a slippery slope that leads to _______.", "respondWith" : "2" }
 ]
