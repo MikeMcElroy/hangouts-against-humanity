@@ -84,12 +84,16 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       setJSONValue(activeBlackCardKey, drawBlackCards(1)[0]);
     };
   }])
-  .factory('submitCards', ['setJSONValue', 'localParticipantCards', function(setJSONValue, localParticipantCards) {
+  .factory('submitCards', ['setJSONValue', 'localParticipantCards', 'whiteCards', function(setJSONValue, localParticipantCards, whiteCards) {
+    var white;
+    whiteCards().then(function(cards) {
+      white = cards;
+    });
     return function(cards) {
       var cardIds = [], i = 0, len = cards.length;
 
       for( ; i < len ; i++) {
-        cardIds[i] = cards[i]._id;
+        cardIds[i] = white.indexOf(cards[i]);
       }
 
       setJSONValue(localParticipantCards, cardIds);
@@ -189,7 +193,13 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
     }
 
     function buildDeck(cards) {
-      return shuffle(Object.keys(cards));
+      var c = [],
+          i = 0, len = cards.length;
+
+      for( ; i < len ; i++) {
+        c[i] = i;
+      }
+      return shuffle(c);
     }
 
     function ifNotAlreadySaved(cardKey) {
