@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+<!-- Licensed under the Apache License, Version 2.0 (the "License"); you may not
+ * use this file except in compliance with the License. You may obtain a copy of
+ * the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *      
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+ * License for the specific language governing permissions and limitations under
+ * the License
+-->
+        <ModulePrefs title="Hangout Starter">
+                <Require feature="rpc" />
+                <Require feature="views" />
+                <Require feature="locked-domain" />
+        </ModulePrefs>
+        <Content type="html"><![CDATA[     
+
+<html>
+<style type="text/css">
+<!--
+.button {
+  border-radius: 3px;
+  -moz-border-radius: 3px;
+  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#ddd));
+  background: -moz-linear-gradient(top, #fff, #ddd);  
+  border: 1px solid #bbb;
+}
+
+.button:active {
+        background: -webkit-gradient(linear, left top, left bottom, from(#aaa), to(#333)); 
+        background: -moz-linear-gradient(bottom, #ddd, #aaa); }
+
+li {
+  list-style-type:none;
+}
+
+body {
+    padding: 1%;
+}
+
+ul {
+    margin-top:10px;
+    padding: 0;
+}
+
+.card.ng-enter {
+  -webkit-animation: bounceInRight 1s;
+  -moz-animation: bounceInRight 1s;
+  -o-animation: bounceInUp 1s;
+  animation: bounceInUp 1s;
+}
+.card.ng-leave {
+  -webkit-animation: bounceOutLeft 1s;
+  -moz-animation: bounceOutUp 1s;
+  -o-animation: bounceOutUp 1s;
+  animation: bounceOutUp 1s;
+}
+
+.card {
+  margin: 0 auto;
+  width: 90%;
+  display:inline-block;
+  border-radius: 5px;
+  font-weight:bold;
+  padding: 4px;
+  vertical-align:top;
+  border: outset 3px black;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size:small;
+}
+
+.black {
+  background-color: black;
+  color: white;
+  min-height: 100px;
+}
+
+.white {
+  background-color: white;
+  color: black;
+}
+
+li.card {
+  display:inline-block;
+  height: 60px;
+  width: 42%;
+  margin-left: 1%;
+  margin-top:-3%;
+}
+-->
+</style>
+<body ng-controller="TableCtrl">
+
+<div>
+    <p ng-show="question.text" ng-bind-html="question.text" class="card black"></p>
+    <p ng-hide="question.text" class="card black">Waiting for a Question...</p>
+    <div ng-hide="isReader">
+        <ul>
+            <li ng-repeat="card in submittedCards" class="card white" ng-click="unselectCard($index)">{{card.text}}</li>
+        </ul>
+        <ul ng-hide="isReader">
+            <li ng-repeat="card in hand" class="card white" ng-click="selectCard($index)">{{card.text}}</li>
+        </ul>
+        <button ng-click="submitCards(submittedCards)" ng-disabled="disableSubmit">Submit Choices</button>
+    </div>
+
+</div>
+<hr>
+<div ng-show="isReader">
+    <button ng-click="drawNewQuestion()" ng-disabled="disableDrawQuestion">Draw Question</button><button ng-click="showAnswers()" ng-disabled="disableShowAnswers">Show Answers</button><button ng-click="moveToNext()" ng-disabled="disableMoveToNext">Move to next Player</button>
+    <p>Submitted Cards</p>
+    <ul ng-hide="disableMoveToNext" ng-repeat="player in submittedPlayers">
+        <li ng-repeat="card in player.submission" class="card white">{{card.text}}</li>
+    </ul>
+    <p ng-show="disableMoveToNext" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
+</div>
+
+
+<script src="//plus.google.com/hangouts/_/api/v1/hangout.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.12/angular.min.js"></script>
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.12/angular-animate.min.js"></script>
+<script src="//hangouts-against-humanity.appspot.com/static/hah.js"></script>
+<script>
+function init() {
+  // When API is ready...
+  gapi.hangout.onApiReady.add(
+      function(eventObj) {
+        if (eventObj.isApiReady) {
+          angular.bootstrap(document, ['HangoutsAgainstHumanity']);
+        }
+      });
+}
+
+// Wait for gadget to load.
+gadgets.util.registerOnLoadHandler(init);
+</script>
+<link href="//hangouts-against-humanity.appspot.com/static/animate.css" rel="stylesheet" />
+</body>
+</html>
+]]>
+</Content>
+</Module>
