@@ -26,17 +26,23 @@ function drawCardFromDeck(getJSONValue, setJSONValue, deckKey) {
 angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
   .factory('submitDelta', ['$timeout', function($timeout) {
     var next_submit,
-        d;
-    return function(delta) {
+        d, r;
+    return function(delta, remove) {
       if(!next_submit) {
         d = {};
+        r = [];
         next_submit = $timeout(function() {
-          gapi.hangout.data.submitDelta(d);
+          gapi.hangout.data.submitDelta(d, r);
           next_submit = undefined;
         }, 20);
       }
       for (var i in delta) {
         d[i] = JSON.stringify(delta[i] || null);
+      }
+      for (var j in remove) {
+        if(r.indexOf(remove[j]) === -1) {
+          r.push(remove[j]);
+        }
       }
     };
   }])
@@ -147,13 +153,15 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
   .factory('sendCards', ['submitDelta', function(submitDelta) {
 
     return function(arrayOfCardsToPlayers) {
-      var delta = {};
+      var delta = {},
+          remove = [];
 
       angular.forEach(arrayOfCardsToPlayers, function(cardsToPlayer) {
         delta['new_' + cardsToPlayer.player] = cardsToPlayer.cards;
+        remove.push('cards_' + cardsToPlayer.player);
       });
 
-      submitDelta(delta);
+      submitDelta(delta, remove);
     };
   }])
   .factory('whiteCards', ['$http', '$q', function($http, $q) {
@@ -182,7 +190,30 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       }
     };
   }])
-  .run(['submitDelta', 'shuffle', 'whiteCardKey', 'blackCardKey', 'currentReaderKey', 'localParticipantId', 'sendCards', 'whiteCards', 'blackCards', '$q', 'gameState', function(submitDelta, shuffle, whiteCardKey, blackCardKey, currentReaderKey, localParticipantId, sendCards, whiteCards, blackCards, $q, gameState) {
+  .factory('transferToNextPlayer', ['submitDelta', 'currentReaderKey', 'activeBlackCardKey', 'localParticipantId', function(submitDelta, readerKey, activeBlackCardKey, myId) {
+    return function() {
+      var delta = {},
+          participants = gapi.hangout.getEnabledParticipants().map(function(p) { return p.id; }).sort(),
+          me = participants.indexOf(myId),
+          next = (me + 1) % participants.length;
+
+      delta[activeBlackCardKey] = '';
+      delta[readerKey] = participants[next];
+
+      submitDelta(delta);
+    };
+  }])
+  .factory('returnCards', ['sendCards', 'drawWhiteCards', function(sendCards, drawWhiteCards) {
+    return function(submittedPlayers) {
+      var newCards = drawWhiteCards(submittedPlayers.reduce(function(y, a) { return y + a.cards.length; }, 0));
+      angular.forEach(submittedPlayers, function(players) {
+          players.cards = newCards.splice(0, players.cards.length);
+      });
+
+      sendCards(submittedPlayers);
+    };
+  }])
+  .run(['submitDelta', 'shuffle', 'whiteCardKey', 'blackCardKey', 'currentReaderKey', 'localParticipantId', 'sendCards', 'whiteCards', 'blackCards', '$q',/* Not strictly needed, but we want to fire it off initially with module#run */ 'gameState', function(submitDelta, shuffle, whiteCardKey, blackCardKey, currentReaderKey, localParticipantId, sendCards, whiteCards, blackCards, $q) {
 
     function saveDeck(cardKey) {
       return function(cardIds) {
@@ -291,7 +322,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       });
     return item;
   }])
-  .controller('TableCtrl', ['$scope', '$sce', 'drawWhiteCards', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'submitDelta', 'currentReaderKey', 'watchForNewParticipants', 'sendCards', 'activeBlackCardKey', function($scope, $sce, drawWhiteCards, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, submitDelta, currentReaderKey, watchForNewParticipants, sendCards, activeBlackCardKey) {
+  .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'returnCards', function($scope, $sce, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, returnCards) {
     var cancelReader,
         cancelNewParticipantsWatch,
         blankCard = { text: '' };
@@ -335,26 +366,31 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
     $scope.isReader = false;
 
     $scope.$watch(ChangeOfActiveQuestion, function(newVal) {
-        $scope.disableSubmit = !newVal;
-        $scope.question = (!!newVal ? newVal : blankCard);
-        $scope.question.text = $sce.trustAsHtml($scope.question.text);
+      $scope.disableSubmit = !newVal;
+      $scope.question = (!!newVal ? newVal : blankCard);
+      $scope.question.text = $sce.trustAsHtml($scope.question.text);
     });
 
     $scope.$watch(AmICurrentReader, function(newVal) {
       $scope.isReader = newVal;
       if(newVal) {
+        $scope.submittedPlayers = [];
         $scope.disableDrawQuestion = false;
         $scope.disableShowAnswers = true;
         $scope.disableMoveToNext = true;
+
         cancelNewParticipantsWatch = watchForNewParticipants(function(participants) {
-          var delta = {},
-              newCards = drawWhiteCards(10 * participants.length);
+          var newPlayers = [],
+              arrayOf10 = [0,1,2,3,4,5,6,7,8,9];
 
           angular.forEach(participants, function(p) {
-            delta['new_' + p.id] = newCards.splice(0, 10);
+            newPlayers.push({
+              player: p.id,
+              cards: arrayOf10
+            });
           });
 
-          submitDelta(delta);
+          returnCards(newPlayers);
         });
       }
     });
@@ -374,34 +410,15 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
     });
 
     /* Dealer-specific */
-    $scope.submittedPlayers = [];
-
     $scope.moveToNext = function() {
-
-      var delta = {},
-          enabledParticipants = gapi.hangout.getEnabledParticipants().map(function(x) { return x.id; }).sort(),
-          me_index = enabledParticipants.indexOf(localParticipantId),
-          newCards = [];
 
       $scope.disableDrawQuestion = true;
       $scope.disableShowAnswers = true;
       $scope.disableMoveToNext = true;
 
-      delta[currentReaderKey] = enabledParticipants[(me_index + 1) % enabledParticipants.length];
-      delta[activeBlackCardKey] = '';
+      transferToNextPlayer();
+      returnCards($scope.submittedPlayers);
 
-      newCards = [];
-      var x = drawWhiteCards($scope.submittedPlayers.reduce(function(y, a) { return y.submission.length + a; }, 0));
-      newCards = $scope.submittedPlayers.map(function(players) {
-        return {
-          cards: x.splice(0, players.submission.length),
-          player: players.player
-        };
-      });
-
-      $scope.submittedPlayers = [];
-      sendCards(newCards);
-      submitDelta(delta, gapi.hangout.data.getKeys().filter(function(x) { return x.search('cards_') === 0; }));
       cancelNewParticipantsWatch();
     };
 
@@ -424,11 +441,9 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
         angular.forEach(newSubmissions, function(submission) {
           $scope.submittedPlayers.push({
               player: submission.lastWriter,
-              submission: submission.value
+              cards: submission.value
           });
         });
       });
     };
-
   }]);
-

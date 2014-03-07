@@ -114,7 +114,7 @@ li.card {
     <button ng-click="drawNewQuestion()" ng-disabled="disableDrawQuestion">Draw Question</button><button ng-click="showAnswers()" ng-disabled="disableShowAnswers">Show Answers</button><button ng-click="moveToNext()" ng-disabled="disableMoveToNext">Move to next Player</button>
     <p>Submitted Cards</p>
     <ul ng-hide="disableMoveToNext" ng-repeat="player in submittedPlayers">
-        <li ng-repeat="card in player.submission" class="card white">{{card.text}}</li>
+        <li ng-repeat="card in player.cards" class="card white">{{card.text}}</li>
     </ul>
     <p ng-show="disableMoveToNext" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
 </div>
