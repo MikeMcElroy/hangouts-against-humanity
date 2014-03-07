@@ -8,5 +8,9 @@ handlers:
   static_dir: static
   http_headers:
     Access-Control-Allow-Origin: '*'
+- url: /static/audio
+  static_dir: static/audio
+  http_headers:
+    Access-Control-Allow-Origin: '*'
 - url: /.*
   script: _go_app

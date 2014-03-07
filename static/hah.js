@@ -213,6 +213,24 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       sendCards(submittedPlayers);
     };
   }])
+  .factory('playSound', [function() {
+    function playSound(sound, global) {
+      sounds[sound].playSound({loop: false, global: !!global});
+    }
+
+    var sounds = {
+          yeah: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/yeah.wav').createSound(),
+          boo: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/boo.wav').createSound(),
+          cheer: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/cheer.wav').createSound(),
+          ready: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/ready-here-we-go.wav').createSound()
+        };
+
+    angular.forEach(Object.keys(sounds), function(soundKey) {
+      playSound[soundKey.toUpperCase()] = soundKey;
+    });
+
+    return playSound;
+  }])
   .run(['submitDelta', 'shuffle', 'whiteCardKey', 'blackCardKey', 'currentReaderKey', 'localParticipantId', 'sendCards', 'whiteCards', 'blackCards', '$q',/* Not strictly needed, but we want to fire it off initially with module#run */ 'gameState', function(submitDelta, shuffle, whiteCardKey, blackCardKey, currentReaderKey, localParticipantId, sendCards, whiteCards, blackCards, $q) {
 
     function saveDeck(cardKey) {
@@ -322,7 +340,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       });
     return item;
   }])
-  .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'returnCards', function($scope, $sce, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, returnCards) {
+  .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'returnCards', 'playSound', function($scope, $sce, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, returnCards, playSound) {
     var cancelReader,
         cancelNewParticipantsWatch,
         blankCard = { text: '' };
@@ -458,6 +476,9 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
               cards: submission.value
           });
         });
+        if($scope.submittedPlayers.length === gapi.hangout.getEnabledParticipants().length) {
+          playSound(playSound.READY, false);
+        }
       });
     };
   }]);
