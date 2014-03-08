@@ -91,6 +91,9 @@ li.card {
   margin-left: 1%;
   margin-top:-3%;
 }
+.possibleWinner {
+  border: 3px solid green;
+}
 -->
 </style>
 <body ng-controller="TableCtrl">
@@ -111,12 +114,15 @@ li.card {
 </div>
 <hr>
 <div ng-show="isReader">
-    <button ng-click="drawNewQuestion()" ng-disabled="disableDrawQuestion">Draw Question</button><button ng-click="showAnswers()" ng-disabled="disableShowAnswers">Show Answers</button><button ng-click="moveToNext()" ng-disabled="disableMoveToNext">Move to next Player</button>
+    <button ng-click="drawNewQuestion()" ng-disabled="disableDrawQuestion">Draw Question</button>
+    <button ng-click="showAnswers()" ng-disabled="disableShowAnswers">Show Answers</button>
+    <button ng-click="selectWinner()" ng-disabled="disableSelectWinner">Select Winner</button>
+    <button ng-click="moveToNext()" ng-disabled="disableMoveToNext">Move to next Player</button>
     <p>Submitted Cards</p>
-    <ul ng-hide="disableMoveToNext" ng-repeat="player in submittedPlayers">
+    <ul ng-hide="disableSelectWinner" ng-repeat="player in submittedPlayers" ng-click="winner($index)" ng-class="{'possibleWinner': 'winner == $index'}">
         <li ng-repeat="card in player.cards" class="card white">{{card.text}}</li>
     </ul>
-    <p ng-show="disableMoveToNext" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
+    <p ng-show="disableSelectWinner" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
 </div>
 
 
