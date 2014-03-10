@@ -47,6 +47,10 @@ ul {
     padding: 0;
 }
 
+div.panel-body {
+  padding:0;
+}
+
 .card.ng-enter {
   -webkit-animation: bounceInRight 1s;
   -moz-animation: bounceInRight 1s;
