@@ -288,17 +288,17 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       context.fillStyle = 'white';
       context.fillText('Hangouts Against', 15, 30);
       context.fillText('Humanity', 15, 60);
-    }).createOverlay({scale: { magnitude: 0.15, reference: gapi.hangout.av.effects.ScaleReference.WIDTH }, position: { x: -0.38, y: -0.3 }}),
+    }).createOverlay({scale: { magnitude: 0.15, reference: gapi.hangout.av.effects.ScaleReference.WIDTH }, position: { x: 0.23, y: -0.3 }}),
         currentPointOverlay;
 
     function createNumberImage(number) {
       return function(context, canvas) {
-        canvas.setAttribute('height', '30px');
-        canvas.setAttribute('width', '50px');
-        context.font = 'bold 25px Helvetica';
+        canvas.setAttribute('height', '60px');
+        canvas.setAttribute('width', '100px');
+        context.font = 'bold 55px Helvetica';
         context.fillStyle = 'white';
 
-        context.fillText(number.toString(), 15, 28);
+        context.fillText(number.toString(), 15, 58);
       };
     }
     return function(points) {
@@ -317,8 +317,8 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
           currentPointOverlay.dispose();
         }
         currentPointOverlay = addImageResource(points.toString(), createNumberImage(points)).showOverlay({
-          scale: { magnitude: 0.15, reference: gapi.hangout.av.effects.ScaleReference.WIDTH },
-          position: { x: -0.34, y: -0.25}
+          scale: { magnitude: 0.1, reference: gapi.hangout.av.effects.ScaleReference.WIDTH },
+          position: { x: 0.19, y: -0.25}
         });
       }
     };
@@ -431,11 +431,15 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
             newCards,
             winner;
 
-        questionChange = evt.addedKeys.some(function(v) { return v.key === activeBlackCardKey; });
-        readerChange = evt.addedKeys.some(function(v) { return v.key === currentReaderKey; });
-        canSubmit = evt.addedKeys.some(function(v) { return v.key === listeningForSubmissionKey; });
-        newCards = evt.addedKeys.some(function(v) { return v.key === localParticipantNewCards; });
-        winner = evt.addedKeys.some(function(v) { return v.key === winnerKey; });
+        questionChange = readerChange = canSubmit = newCards = winner = false;
+
+        angular.forEach(evt.addedKeys, function(v) {
+          questionChange = (v.key === activeBlackCardKey ? true : questionChange);
+          readerChange = (v.key === currentReaderKey ? true : readerChange);
+          canSubmit = (v.key === listeningForSubmissionKey ? true : canSubmit);
+          newCards = (v.key === localParticipantNewCards ? true : newCards);
+          winner = (v.key === winnerKey ? true : winner);
+        });
 
         if(questionChange || readerChange || canSubmit || newCards || winner) {
           item.activeQuestion = (questionChange ? black[getJSONValue(activeBlackCardKey)] : item.activeQuestion);
