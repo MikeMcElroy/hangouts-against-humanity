@@ -372,8 +372,12 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
           var x = {};
           x[currentReaderKey] = localParticipantId;
           submitDelta(x);
-
-          sendCards([ localParticipantId ], 10);
+          gapi.hangout.data.onStateChanged.add(function _temporaryName(evt) {
+            if(evt.addedKeys.some(function(k) { return k.key === whiteCardKey; })) {
+              sendCards([ localParticipantId ], 10);
+              gapi.hangout.data.onStateChanged.remove(_temporaryName);
+            }
+          });
         }
         return cardIds;
       });
