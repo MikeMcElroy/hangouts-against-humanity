@@ -339,6 +339,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
         var x = {};
         x[cardKey] = cardIds;
         submitDelta(x);
+        return cardIds;
       };
     }
 
@@ -365,6 +366,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
     whiteCards()
       .then(ifNotAlreadySaved(whiteCardKey))
       .then(buildDeck)
+      .then(saveDeck(whiteCardKey))
       .then(function pullMyCards(cardIds) {
         if(angular.isUndefined(gapi.hangout.data.getValue(currentReaderKey))) {
           var x = {};
@@ -374,8 +376,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
           sendCards([ localParticipantId ], 10);
         }
         return cardIds;
-      })
-      .then(saveDeck(whiteCardKey));
+      });
 
     blackCards()
       .then(ifNotAlreadySaved(blackCardKey))
