@@ -23,7 +23,7 @@ function drawCardFromDeck(getJSONValue, setJSONValue, deckKey) {
   };
 }
 
-angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
+angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
   .factory('submitDelta', ['$timeout', function($timeout) {
     var next_submit,
         d, r;
@@ -317,8 +317,8 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
           currentPointOverlay.dispose();
         }
         currentPointOverlay = addImageResource(points.toString(), createNumberImage(points)).showOverlay({
-          scale: { magnitude: 0.1, reference: gapi.hangout.av.effects.ScaleReference.WIDTH },
-          position: { x: 0.19, y: -0.25}
+          scale: { magnitude: 0.15, reference: gapi.hangout.av.effects.ScaleReference.WIDTH },
+          position: { x: 0.25, y: -0.25}
         });
       }
     };
