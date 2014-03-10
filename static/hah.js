@@ -482,13 +482,13 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
     $scope.submittedCards = [];
 
     $scope.selectCard = function(index) {
-      var card = $scope.hand.splice(index, 1)[0];
-      $scope.submittedCards.push(card);
+      if(!$scope.isReader) {
+        $scope.submittedCards.push($scope.hand.splice(index, 1)[0]);
+      }
     };
 
     $scope.unselectCard = function(index) {
-      var card = $scope.submittedCards.splice(index, 1)[0];
-      $scope.hand.push(card);
+      $scope.hand.push($scope.submittedCards.splice(index, 1)[0]);
     };
 
     $scope.disableSubmit = false;
