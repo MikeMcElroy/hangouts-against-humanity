@@ -100,14 +100,14 @@ li.card {
   <p ng-show="question.text" ng-bind-html="question.text" class="card black"></p>
   <p ng-hide="question.text" class="card black">Waiting for a Question...</p>
   <accordion close-others="oneAtATime">
-    <accordion-group  header="My Hand">
+    <accordion-group header="My Hand">
       <ul>
         <li ng-repeat="card in submittedCards" class="card white" ng-click="unselectCard($index)">{{card.text}}</li>
       </ul>
       <ul ng-hide="isReader">
         <li ng-repeat="card in hand" class="card white" ng-click="selectCard($index)">{{card.text}}</li>
       </ul>
-      <button ng-hide="isReader" ng-click="submitCards(submittedCards)" ng-disabled="disableSubmit">Submit Choices</button>
+      <button ng-hide="isReader" ng-click="submitCards(submittedCards)" ng-disabled="disableSubmit && (question.draw == submittedCards.length)">Submit Choices</button>
     </accordion-group>
     <accordion-group ng-show="isReader" header="Reader Actions" is-open="isReader">
       <button ng-click="drawNewQuestion()" ng-disabled="disableDrawQuestion">Draw Question</button>

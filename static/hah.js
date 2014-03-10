@@ -51,6 +51,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       var delta = {};
       delta[key] = value;
       submitDelta(delta);
+      return value;
     };
   }])
   .constant('getJSONValue', function(key) { return JSON.parse(gapi.hangout.data.getValue(key) || null); })
@@ -87,7 +88,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
   .factory('drawBlackCards', ['getJSONValue', 'setJSONValue', 'blackCardKey', drawCardFromDeck])
   .factory('drawNewQuestion', ['drawBlackCards', 'setJSONValue', 'activeBlackCardKey', function(drawBlackCards, setJSONValue, activeBlackCardKey) {
     return function() {
-      setJSONValue(activeBlackCardKey, drawBlackCards(1)[0]);
+      return setJSONValue(activeBlackCardKey, drawBlackCards(1)[0]);
     };
   }])
   .factory('submitCards', ['setJSONValue', 'localParticipantCards', 'whiteCards', function(setJSONValue, localParticipantCards, whiteCards) {
@@ -150,15 +151,15 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       return cancel;
     };
   }])
-  .factory('sendCards', ['submitDelta', function(submitDelta) {
-
-    return function(arrayOfCardsToPlayers) {
+  .factory('sendCards', ['submitDelta', 'drawWhiteCards', function(submitDelta, drawWhiteCards) {
+    return function(playerIds, cards) {
       var delta = {},
-          remove = [];
+          remove = [],
+          newCards = drawWhiteCards(playerIds.length * cards);
 
-      angular.forEach(arrayOfCardsToPlayers, function(cardsToPlayer) {
-        delta['new_' + cardsToPlayer.player] = cardsToPlayer.cards;
-        remove.push('cards_' + cardsToPlayer.player);
+      angular.forEach(playerIds, function(p) {
+        delta['new_' + p] = newCards.splice(0, cards);
+        remove.push('cards_' + p);
       });
 
       submitDelta(delta, remove);
@@ -210,16 +211,6 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       x[winnerKey] = participant;
 
       submitDelta(x);
-    };
-  }])
-  .factory('returnCards', ['sendCards', 'drawWhiteCards', function(sendCards, drawWhiteCards) {
-    return function(submittedPlayers) {
-      var newCards = drawWhiteCards(submittedPlayers.reduce(function(y, a) { return y + a.cards.length; }, 0));
-      angular.forEach(submittedPlayers, function(players) {
-          players.cards = newCards.splice(0, players.cards.length);
-      });
-
-      sendCards(submittedPlayers);
     };
   }])
   .factory('addImageResource', ['$cacheFactory', function($cacheFactory) {
@@ -380,11 +371,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
           x[currentReaderKey] = localParticipantId;
           submitDelta(x);
 
-          sendCards([
-            {
-              player: localParticipantId,
-              cards: cardIds.splice(0,10)
-            }]);
+          sendCards([ localParticipantId ], 10);
         }
         return cardIds;
       })
@@ -461,7 +448,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       });
     return item;
   }])
-  .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'returnCards', 'playSound', 'showSubmittedCards', 'showAwesomePoints', 'selectWinner', function($scope, $sce, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, returnCards, playSound, showSubmittedCards, showAwesomePoints, selectWinner) {
+  .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'sendCards', 'playSound', 'showSubmittedCards', 'showAwesomePoints', 'selectWinner', function($scope, $sce, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, sendCards, playSound, showSubmittedCards, showAwesomePoints, selectWinner) {
     var cancelReader,
         cancelNewParticipantsWatch,
         blankCard = { text: '' };
@@ -525,17 +512,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
         $scope.disableSelectWinner = true;
 
         cancelNewParticipantsWatch = watchForNewParticipants(function(participants) {
-          var newPlayers = [],
-              arrayOf10 = [0,1,2,3,4,5,6,7,8,9];
-
-          angular.forEach(participants, function(p) {
-            newPlayers.push({
-              player: p.id,
-              cards: arrayOf10
-            });
-          });
-
-          returnCards(newPlayers);
+          sendCards(participants.map(function(p) { return p.id; }), 10);
         });
       }
     });
@@ -571,7 +548,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       $scope.disableSelectWinner = true;
 
       transferToNextPlayer();
-      returnCards($scope.submittedPlayers);
+      sendCards($scope.submittedPlayers.map(function(p) { return p.player; }), $scope.question.pick - $scope.question.draw );
 
       cancelNewParticipantsWatch();
     };
@@ -598,12 +575,15 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
     };
 
     $scope.drawNewQuestion = function() {
+      var newQuestion = drawNewQuestion();
       $scope.submittedPlayers = [];
-      drawNewQuestion();
       $scope.disableDrawQuestion = true;
       $scope.disableShowAnswers = false;
       $scope.disableMoveToNext = true;
       $scope.disableSelectWinner = true;
+      if("0" !== newQuestion.draw) {
+        sendCards(gapi.hangout.getEnabledParticipants().map(function(p) { return p.id; }), newQuestion.draw);
+      }
 
       cancelReader = watchForSubmittedCards(function(newSubmissions) {
         angular.forEach(newSubmissions, function(submission) {
