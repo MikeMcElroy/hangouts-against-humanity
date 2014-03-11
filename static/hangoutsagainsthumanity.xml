@@ -44,7 +44,7 @@ body {
 
 ul {
     margin-top:10px;
-    padding: 0;
+    padding: 0 3% 0 3%;
 }
 
 div.panel-body {
@@ -105,9 +105,25 @@ li.card {
 -->
 </style>
 <body ng-controller="TableCtrl" ng-init="showHand = true">
-  <p ng-show="question.text" ng-bind-html="question.text" class="card black"></p>
-  <p ng-hide="question.text" class="card black">Waiting for a Question...</p>
+  <p ng-bind-html="question.text" class="card black"></p>
   <accordion close-others="oneAtATime">
+    <accordion-group heading="Scoreboard">
+      <dl class="scoreboard">
+        <dt ng-repeat-start="(person,points) in score">{{person}}</dt>
+        <dd ng-repeat-end>{{points}}</dd>
+      </dl>
+    </accordion-group>
+    <accordion-group ng-show="isReader" heading="Reader Actions" is-open="true">
+      <button ng-click="drawNewQuestion()" ng-hide="disableDrawQuestion">Draw Question</button>
+      <button ng-click="showAnswers()" ng-hide="disableShowAnswers">Show Answers</button>
+      <button ng-click="selectWinner()" ng-hide="disableSelectWinner">Select Winner</button>
+      <button ng-click="moveToNext()" ng-hide="disableMoveToNext">Move to next Player</button>
+      <p>Submitted Cards</p>
+      <ul ng-hide="disableSelectWinner" ng-repeat="player in submittedPlayers" ng-click="selected.winner = player" ng-class="{'possibleWinner': 'selected.winner == player'}">
+          <li ng-repeat="card in player.cards" class="card white">{{card.text}}</li>
+      </ul>
+      <p ng-show="disableSelectWinner" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
+    </accordion-group>
     <accordion-group heading="My Hand" is-open="!isReader || showHand">
       <ul>
         <li ng-repeat="card in submittedCards" class="card white" ng-click="unselectCard($index)">{{card.text}}</li>
@@ -116,17 +132,6 @@ li.card {
         <li ng-repeat="card in hand" class="card white" ng-click="selectCard($index)">{{card.text}}</li>
       </ul>
       <button ng-hide="isReader" ng-click="submitCards(submittedCards)" ng-disabled="disableSubmit && (question.draw == submittedCards.length)">Submit Choices</button>
-    </accordion-group>
-    <accordion-group ng-show="isReader" heading="Reader Actions" is-open="true">
-      <button ng-click="drawNewQuestion()" ng-disabled="disableDrawQuestion">Draw Question</button>
-      <button ng-click="showAnswers()" ng-disabled="disableShowAnswers">Show Answers</button>
-      <button ng-click="selectWinner()" ng-disabled="disableSelectWinner">Select Winner</button>
-      <button ng-click="moveToNext()" ng-disabled="disableMoveToNext">Move to next Player</button>
-      <p>Submitted Cards</p>
-      <ul ng-hide="disableSelectWinner" ng-repeat="player in submittedPlayers" ng-click="winner($index)" ng-class="{'possibleWinner': 'winner == $index'}">
-          <li ng-repeat="card in player.cards" class="card white">{{card.text}}</li>
-      </ul>
-      <p ng-show="disableSelectWinner" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
     </accordion-group>
   </accordion>
 

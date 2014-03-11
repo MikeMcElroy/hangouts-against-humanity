@@ -60,7 +60,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
   .constant('activeBlackCardKey', 'active_black_card')
   .constant('currentReaderKey', 'current_reader')
   .constant('currentStateKey', 'current_state')
-  .constant('winnerKey', 'winner')
+  .constant('scoreboardKey', 'scoreboard')
   .constant('listeningForSubmissionKey', 'listening')
   .constant('shuffle', function(array) {
     var i, j, swapped,
@@ -204,114 +204,13 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       submitDelta(delta);
     };
   }])
-  .factory('selectWinner', ['submitDelta', 'winnerKey', function(submitDelta, winnerKey) {
+  .factory('selectWinner', ['submitDelta', 'getJSONValue', 'scoreboardKey', function(submitDelta, getJSONValue, scoreboardKey) {
     return function(participant) {
-      var x = {};
+      var x = getJSONValue(scoreboardKey);
 
-      x[winnerKey] = participant;
+      x[participant] = x[participant]++;
 
       submitDelta(x);
-    };
-  }])
-  .factory('addImageResource', ['$cacheFactory', function($cacheFactory) {
-    var canvas = angular.element("<canvas></canvas>")[0],
-        context = canvas.getContext('2d'),
-        ImageResourceCache = $cacheFactory('imageResources');
-
-    return function(saveAs, creator) {
-      var imgRes;
-      if(!(imgRes = ImageResourceCache.get(saveAs))) {
-        creator(context, canvas);
-        imgRes = gapi.hangout.av.effects.createImageResource(canvas.toDataURL());
-        ImageResourceCache.put(saveAs, imgRes);
-      }
-
-      return imgRes;
-    };
-  }])
-  .constant('buildCard', function(context, canvas, color) {
-      var x = 0, y = 0, radius = 30, width = 200, height = 250;
-      canvas.setAttribute('height', '250px');
-      canvas.setAttribute('width', '200px');
-      context.fillStyle = color || 'white';
-      context.font = 'bold 20px Helvetica';
-
-      context.beginPath();
-      context.moveTo(x + radius, y);
-      context.lineTo(x + width - radius, y);
-      context.quadraticCurveTo(x + width, y, x + width, y + radius);
-      context.lineTo(x + width, y + height - radius);
-      context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-      context.lineTo(x + radius, y + height);
-      context.quadraticCurveTo(x, y + height, x, y + height - radius);
-      context.lineTo(x, y + radius);
-      context.quadraticCurveTo(x, y, x + radius, y);
-      context.closePath();
-      context.fill();
-  })
-  .factory('showSubmittedCards', ['addImageResource', 'buildCard', function(addImageResource, buildCard) {
-    var submittedCardResource = addImageResource('submitted', function(context, canvas) {
-
-      buildCard(context, canvas, 'white');
-
-      context.fillStyle = 'black';
-      context.fillText('Hangouts Against', 15, 30);
-      context.fillText('Humanity', 15, 60);
-    }),
-        overlays = [],
-        padding = 0.05;
-
-
-    for (var i = 0; i < 3; i++) {
-      overlays.unshift(submittedCardResource.createOverlay({scale: { magnitude: 0.15, reference: gapi.hangout.av.effects.ScaleReference.WIDTH }, position: {x: -0.5 + (padding*i), y: 0.5 - (padding*i)}}));
-    }
-
-    return function(number) {
-      for (var i = 0; i < 3 ; i++) {
-        overlays[i].setVisible(i < number);
-      }
-    };
-  }])
-  .factory('showAwesomePoints', ['addImageResource', 'buildCard', function(addImageResource, buildCard) {
-    var awesomePointOverlay = addImageResource('awesomePoint', function(context, canvas) {
-      buildCard(context, canvas, 'black');
-
-      context.fillStyle = 'white';
-      context.fillText('Hangouts Against', 15, 30);
-      context.fillText('Humanity', 15, 60);
-    }).createOverlay({scale: { magnitude: 0.15, reference: gapi.hangout.av.effects.ScaleReference.WIDTH }, position: { x: 0.23, y: -0.3 }}),
-        currentPointOverlay;
-
-    function createNumberImage(number) {
-      return function(context, canvas) {
-        canvas.setAttribute('height', '60px');
-        canvas.setAttribute('width', '100px');
-        context.font = 'bold 55px Helvetica';
-        context.fillStyle = 'white';
-
-        context.fillText(number.toString(), 15, 58);
-      };
-    }
-    return function(points) {
-      if(points <= 0) {
-        awesomePointOverlay.setVisible(false);
-        if(!!currentPointOverlay && !currentPointOverlay.isDisposed()) {
-          currentPointOverlay.dispose();
-        }
-        return;
-      }
-      if(!(awesomePointOverlay.isVisible())) {
-        awesomePointOverlay.setVisible(true);
-      }
-      if(points > 1) {
-        if(!!currentPointOverlay && !currentPointOverlay.isDisposed()) {
-          currentPointOverlay.dispose();
-        }
-        currentPointOverlay = addImageResource(points.toString(), createNumberImage(points)).showOverlay({
-          scale: { magnitude: 0.15, reference: gapi.hangout.av.effects.ScaleReference.WIDTH },
-          position: { x: 0.25, y: -0.25}
-        });
-      }
     };
   }])
   .factory('playSound', [function() {
@@ -332,7 +231,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
 
     return playSound;
   }])
-  .run(['submitDelta', 'shuffle', 'whiteCardKey', 'blackCardKey', 'currentReaderKey', 'localParticipantId', 'sendCards', 'whiteCards', 'blackCards', '$q',/* Not strictly needed, but we want to fire it off initially with module#run */ 'gameState', function(submitDelta, shuffle, whiteCardKey, blackCardKey, currentReaderKey, localParticipantId, sendCards, whiteCards, blackCards, $q) {
+  .run(['submitDelta', 'shuffle', 'whiteCardKey', 'blackCardKey', 'currentReaderKey', 'scoreboardKey', 'localParticipantId', 'sendCards', 'whiteCards', 'blackCards', 'gameState', '$q', function(submitDelta, shuffle, whiteCardKey, blackCardKey, currentReaderKey, scoreboardKey, localParticipantId, sendCards, whiteCards, blackCards, gameState, $q) {
 
     function saveDeck(cardKey) {
       return function(cardIds) {
@@ -387,8 +286,14 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       .then(buildDeck)
       .then(saveDeck(blackCardKey));
 
+
+    var x = {};
+    gameState.score[gapi.hangout.getLocalParticipant().person.displayName] = 0;
+    x[scoreboardKey] = gameState.score;
+    submitDelta(x);
+
   }])
-  .factory('gameState', ['activeBlackCardKey', 'currentReaderKey', 'listeningForSubmissionKey', 'localParticipantNewCards', 'winnerKey', 'getJSONValue', 'whiteCards', 'blackCards', '$rootScope', function(activeBlackCardKey, currentReaderKey, listeningForSubmissionKey, localParticipantNewCards, winnerKey, getJSONValue, whiteCards, blackCards, $rootScope) {
+  .factory('gameState', ['activeBlackCardKey', 'currentReaderKey', 'listeningForSubmissionKey', 'scoreboardKey', 'localParticipantNewCards', 'getJSONValue', 'whiteCards', 'blackCards', '$rootScope', function(activeBlackCardKey, currentReaderKey, listeningForSubmissionKey, scoreboardKey, localParticipantNewCards, getJSONValue, whiteCards, blackCards, $rootScope) {
     var item = {},
         white, black;
 
@@ -404,16 +309,18 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
     }).then(function(cards) {
       white = cards;
     });
+
     blackCards().then(function(cards) {
       var activeQuestion = getJSONValue(activeBlackCardKey);
-      item.activeQuestion = cards[activeQuestion || ''] || { text: '' };
+      item.activeQuestion = cards[activeQuestion || ''];
       return cards;
     }).then(function(cards) {
       black = cards;
     });
+
     item.currentReader = getJSONValue(currentReaderKey);
     item.canSubmit = getJSONValue(listeningForSubmissionKey);
-    item.winner = getJSONValue(winnerKey);
+    item.score = getJSONValue(scoreboardKey) || {};
 
     gapi.hangout.data.onStateChanged.add(
       function(evt) {
@@ -421,26 +328,23 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
             readerChange,
             canSubmit,
             newCards,
-            winner;
+            score;
 
-        questionChange = readerChange = canSubmit = newCards = winner = false;
+        questionChange = readerChange = canSubmit = newCards = score = false;
 
         angular.forEach(evt.addedKeys, function(v) {
           questionChange = (v.key === activeBlackCardKey ? true : questionChange);
           readerChange = (v.key === currentReaderKey ? true : readerChange);
           canSubmit = (v.key === listeningForSubmissionKey ? true : canSubmit);
           newCards = (v.key === localParticipantNewCards ? true : newCards);
-          winner = (v.key === winnerKey ? true : winner);
+          score = (v.key === scoreboardKey ? true : score);
         });
 
-        if(questionChange || readerChange || canSubmit || newCards || winner) {
+        if(questionChange || readerChange || canSubmit || newCards || score) {
           item.activeQuestion = (questionChange ? black[getJSONValue(activeBlackCardKey)] : item.activeQuestion);
           item.currentReader = (readerChange ? getJSONValue(currentReaderKey) : item.currentReader);
           item.canSubmit = (canSubmit ? getJSONValue(listeningForSubmissionKey) : item.canSubmit);
-          if(winner) {
-            item.winner = (winner ? getJSONValue(winnerKey) : item.winner);
-            gapi.hangout.data.clearValue(winnerKey);
-          }
+          item.score = (score ? getJSONValue(scoreboardKey) : item.score);
           if(newCards) {
             item.newCards = [];
             angular.forEach(getJSONValue(localParticipantNewCards), function(c, i) {
@@ -451,12 +355,13 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
           $rootScope.$apply();
         }
       });
+
     return item;
   }])
-  .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'sendCards', 'playSound', 'showSubmittedCards', 'showAwesomePoints', 'selectWinner', function($scope, $sce, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, sendCards, playSound, showSubmittedCards, showAwesomePoints, selectWinner) {
+  .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'sendCards', 'playSound', 'selectWinner', function($scope, $sce, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, sendCards, playSound, selectWinner) {
     var cancelReader,
         cancelNewParticipantsWatch,
-        blankCard = { text: '' };
+        blankCard = { text: 'Waiting for a Question...' };
 
     function ChangeOfActiveQuestion() {
       return gameState.activeQuestion;
@@ -474,8 +379,8 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       return gameState.newCards;
     }
 
-    function AmIWinner() {
-      return gameState.winner === localParticipantId;
+    function ScoreChange() {
+      return gameState.score;
     }
 
     $scope.hand = [];
@@ -494,7 +399,6 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
     $scope.disableSubmit = false;
     $scope.submitCards = function(cards) {
       submitCards(cards);
-      showSubmittedCards(cards.length);
       $scope.submittedCards = [];
       $scope.disableSubmit = true;
     };
@@ -523,12 +427,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
     });
 
     $scope.$watch(CanSubmit, function(newVal) {
-      if(!!newVal) {
-        $scope.disableSubmit = false;
-      } else {
-        showSubmittedCards(0);
-        $scope.disableSubmit = true;
-      }
+      $scope.disableSubmit = !newVal;
     });
 
     $scope.$watch(NewCardsDealt, function(newVal) {
@@ -537,11 +436,8 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       }
     });
 
-    var points = 0;
-    $scope.$watch(AmIWinner, function(newVal) {
-      if(newVal) {
-        showAwesomePoints(++points);
-      }
+    $scope.$watch(ScoreChange, function(newScore) {
+      $scope.scoreboard = newScore;
     });
 
     /* Dealer-specific */
@@ -567,12 +463,10 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       $scope.disableSelectWinner = false;
     };
 
-    $scope.winner = function(index) {
-      $scope.winner = index;
-    };
-
+    $scope.selected = {};
     $scope.selectWinner = function() {
-      selectWinner($scope.submittedPlayers[$scope.winner].player);
+      selectWinner(gapi.hangout.getParticipantById($scope.selected.winner.player).person.displayName);
+      $scope.selected = {};
       $scope.disableDrawQuestion = true;
       $scope.disableShowAnswers = true;
       $scope.disableMoveToNext = false;
@@ -581,11 +475,12 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
 
     $scope.drawNewQuestion = function() {
       var newQuestion = drawNewQuestion();
-      $scope.submittedPlayers = [];
       $scope.disableDrawQuestion = true;
       $scope.disableShowAnswers = false;
       $scope.disableMoveToNext = true;
       $scope.disableSelectWinner = true;
+
+      $scope.submittedPlayers = [];
       if("0" !== newQuestion.draw) {
         sendCards(gapi.hangout.getEnabledParticipants().map(function(p) { return p.id; }), newQuestion.draw);
       }
