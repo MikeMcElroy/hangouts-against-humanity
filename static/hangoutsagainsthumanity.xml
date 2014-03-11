@@ -109,7 +109,7 @@ li.card {
   <accordion close-others="oneAtATime">
     <accordion-group heading="Scoreboard">
       <dl class="scoreboard">
-        <dt ng-repeat-start="(person,points) in score">{{person}}</dt>
+        <dt ng-repeat-start="(person,points) in scoreboard">{{person}}</dt>
         <dd ng-repeat-end>{{points}}</dd>
       </dl>
     </accordion-group>
