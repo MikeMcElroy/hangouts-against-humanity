@@ -112,6 +112,9 @@ li.card {
         <li><button ng-click="playSound('yeah')">Yeah!</button></li>
         <li><button ng-click="playSound('boo')">Boooo!</button></li>
         <li><button ng-click="playSound('cheer')">Cheer!</button></li>
+        <li><button ng-click="playSound('timer')">Hurry up!</button></li>
+        <li><button ng-click="playSound('sadtrombone')">Fail!</button></li>
+        <li><button ng-click="playSound('rimshot')">Ba-dum-psst!</button></li>
       </ul>
     </accordion-group>
     <accordion-group heading="Scoreboard">
