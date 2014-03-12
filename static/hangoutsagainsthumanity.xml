@@ -107,6 +107,13 @@ li.card {
 <body ng-controller="TableCtrl" ng-init="showHand = true">
   <p ng-bind-html="question.text" class="card black"></p>
   <accordion close-others="oneAtATime">
+    <accordion-group heading="Sounds">
+      <ul class="sounds">
+        <li><button ng-click="playSound('yeah')">Yeah!</button></li>
+        <li><button ng-click="playSound('boo')">Boooo!</button></li>
+        <li><button ng-click="playSound('cheer')">Cheer!</button></li>
+      </ul>
+    </accordion-group>
     <accordion-group heading="Scoreboard">
       <dl class="scoreboard">
         <dt ng-repeat-start="(person,points) in scoreboard">{{person}}</dt>

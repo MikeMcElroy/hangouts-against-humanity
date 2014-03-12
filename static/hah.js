@@ -214,22 +214,12 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
     };
   }])
   .factory('playSound', [function() {
-    function playSound(sound, global) {
-      sounds[sound].play({loop: false, global: !!global});
-    }
-
-    var sounds = {
+    return {
           yeah: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/yeah.wav').createSound(),
           boo: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/boo.wav').createSound(),
           cheer: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/cheer.wav').createSound(),
           ready: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/ready-here-we-go.wav').createSound()
         };
-
-    angular.forEach(Object.keys(sounds), function(soundKey) {
-      playSound[soundKey.toUpperCase()] = soundKey;
-    });
-
-    return playSound;
   }])
   .run(['submitDelta', 'shuffle', 'whiteCardKey', 'blackCardKey', 'currentReaderKey', 'scoreboardKey', 'localParticipantId', 'sendCards', 'whiteCards', 'blackCards', 'gameState', '$q', function(submitDelta, shuffle, whiteCardKey, blackCardKey, currentReaderKey, scoreboardKey, localParticipantId, sendCards, whiteCards, blackCards, gameState, $q) {
 
@@ -386,6 +376,10 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
     $scope.hand = [];
     $scope.submittedCards = [];
 
+    $scope.playSound = function(sound) {
+      playSound[sound].play({loop: false, global: true});
+    };
+
     $scope.selectCard = function(index) {
       if(!$scope.isReader) {
         $scope.submittedCards.push($scope.hand.splice(index, 1)[0]);
@@ -493,7 +487,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
           });
         });
         if($scope.submittedPlayers.length === gapi.hangout.getEnabledParticipants().length - 1) {
-          playSound(playSound.READY, false);
+          playSound.ready.play({loop: false, global: false});
         }
       });
     };
