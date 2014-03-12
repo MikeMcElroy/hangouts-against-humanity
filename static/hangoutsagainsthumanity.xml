@@ -47,8 +47,25 @@ ul {
     padding: 0 3% 0 3%;
 }
 
+dl {
+  -webkit-margin-after: 0;
+  margin: 3px;
+}
+
+dt, dd {
+  display: inline-block;
+}
+
+dt {
+  width: 70%;
+  padding-right:5%;
+  text-align:right;
+}
+
 div.panel-body {
   padding:0;
+  max-height:55%;
+  overflow:scroll;
 }
 
 .card.ng-enter {
