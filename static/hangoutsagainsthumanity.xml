@@ -83,7 +83,7 @@ div.panel-body {
 
 .card {
   margin: 0 auto;
-  width: 90%;
+  width: 100%;
   display:inline-block;
   border-radius: 7px;
   font-weight:bold;
@@ -111,10 +111,10 @@ div.panel-body {
 
 li.card {
   display:inline-block;
-  height: 9rem;
-  width: 49%;
+  height: 11rem;
+  width: 19%;
   margin-left: 1%;
-  margin-top:-2%;
+  margin-top:-3%;
 }
 .possibleWinner {
   border: 3px solid green;

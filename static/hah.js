@@ -238,7 +238,15 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
           rimshot: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/rimshot.wav').createSound()
         };
   }])
-  .run(['submitDelta', 'shuffle', 'whiteCardKey', 'blackCardKey', 'currentReaderKey', 'scoreboardKey', 'localParticipantId', 'sendCards', 'whiteCards', 'blackCards', 'gameState', '$q', function(submitDelta, shuffle, whiteCardKey, blackCardKey, currentReaderKey, scoreboardKey, localParticipantId, sendCards, whiteCards, blackCards, gameState, $q) {
+  .factory('videoCanvas', [function() {
+    var canvas = gapi.hangout.layout.getCanvas();
+
+    canvas.setPosition(300, 0);
+    canvas.setWidth(300);
+    canvas.setVisible(true);
+    return canvas;
+  }])
+  .run(['submitDelta', 'shuffle', 'whiteCardKey', 'blackCardKey', 'currentReaderKey', 'scoreboardKey', 'localParticipantId', 'sendCards', 'whiteCards', 'blackCards', 'gameState', '$q', 'videoCanvas', function(submitDelta, shuffle, whiteCardKey, blackCardKey, currentReaderKey, scoreboardKey, localParticipantId, sendCards, whiteCards, blackCards, gameState, $q) {
 
     function saveDeck(cardKey) {
       return function(cardIds) {
