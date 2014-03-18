@@ -239,7 +239,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
         };
   }])
   .factory('videoCanvas', [function() {
-    var canvas = gapi.hangout.layout.getCanvas();
+    var canvas = gapi.hangout.layout.getVideoCanvas();
 
     canvas.setPosition(300, 0);
     canvas.setWidth(300);
