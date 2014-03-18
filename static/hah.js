@@ -62,6 +62,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
   .constant('currentStateKey', 'current_state')
   .constant('scoreboardKey', 'scoreboard')
   .constant('listeningForSubmissionKey', 'listening')
+  .constant('cardSetKey', 'cardSets')
   .constant('shuffle', function(array) {
     var i, j, swapped,
         arrLen = array.length;
@@ -165,9 +166,18 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       submitDelta(delta, remove);
     };
   }])
-  .factory('whiteCards', ['$http', '$q', function($http, $q) {
+  .factory('cardSetsDefer', ['$q', 'getJSONValue', 'cardSetKey', function($q, getJSONValue, cardSetKey) {
+    var defer = $q.defer();
+    if (angular.isString(getJSONValue(cardSetKey))) {
+      defer.resolve(getJSONValue(cardSetKey));
+    }
+    return $q.defer();
+  }])
+  .factory('whiteCards', ['$http', '$q', 'cardSetsDefer', function($http, $q, cardSetsDefer) {
     var whiteCards,
-        promise = $http.get('//hangouts-against-humanity.appspot.com/static/whitecards.json').then(function(response) {
+        promise = cardSetsDefer.promise.then(function(sets) {
+          return $http.get('//hangouts-against-humanity.appspot.com/white?sets=' + sets);
+        }).then(function(response) {
           return (whiteCards = response.data);
         });
     return function() {
@@ -178,9 +188,11 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       }
     };
   }])
-  .factory('blackCards', ['$http', '$q', function($http, $q) {
+  .factory('blackCards', ['$http', '$q', 'cardSetsDefer', function($http, $q, cardSetsDefer) {
     var blackCards,
-        promise = $http.get('//hangouts-against-humanity.appspot.com/static/blackcards.json').then(function(response) {
+        promise = cardSetsDefer.promise.then(function(sets) {
+          return $http.get('//hangouts-against-humanity.appspot.com/black?sets=' + sets);
+        }).then(function(response) {
           return (blackCards = response.data);
         });
     return function() {
@@ -206,9 +218,11 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
   }])
   .factory('selectWinner', ['submitDelta', 'getJSONValue', 'scoreboardKey', function(submitDelta, getJSONValue, scoreboardKey) {
     return function(participant) {
-      var x = getJSONValue(scoreboardKey);
+      var x = {},
+          scores = getJSONValue(scoreboardKey);
 
-      x[participant] = x[participant]++;
+      scores[participant] = scores[participant]++;
+      x[scoreboardKey] = scores;
 
       submitDelta(x);
     };
@@ -350,6 +364,32 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       });
 
     return item;
+  }])
+  .controller('CardSetSelect', ['$scope', 'cardSetsDefer', 'setJSONValue', 'cardSetKey', function($scope, cardSetsDefer, setJSONValue, cardSetKey) {
+    $scope.cardSets = {
+      'base' : 'Base Set',
+      'first' : 'First Expansion',
+      'second' : 'Second Expansion',
+      'third' : 'Third Expansion',
+      'fourth' : 'Fourth Expansion',
+      'gall' : 'Cards Against Gallifrey (Doctor Who variant)'
+    };
+
+    $scope.cards = {};
+
+    $scope.submit = function() {
+      var cards = [];
+      angular.forEach($scope.cards, function(value, key) {
+        if (value) {
+          cards.push(key);
+        }
+      });
+      if(cards.length > 0) {
+        cardSetsDefer.resolve(cards.join('+'));
+        $scope.init.startup = false;
+        setJSONValue(cardSetKey, cards.join('+'));
+      }
+    };
   }])
   .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'sendCards', 'playSound', 'selectWinner', function($scope, $sce, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, sendCards, playSound, selectWinner) {
     var cancelReader,

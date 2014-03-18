@@ -119,48 +119,58 @@ li.card {
 .possibleWinner {
   border: 3px solid green;
 }
+
+.cardset {
+  display: block;
+}
 -->
 </style>
-<body ng-controller="TableCtrl" ng-init="showHand = true">
-  <p ng-bind-html="question.text" class="card black"></p>
-  <accordion close-others="oneAtATime">
-    <accordion-group heading="Sounds">
-      <ul class="sounds">
-        <li><button ng-click="playSound('yeah')">Yeah!</button></li>
-        <li><button ng-click="playSound('boo')">Boooo!</button></li>
-        <li><button ng-click="playSound('cheer')">Cheer!</button></li>
-        <li><button ng-click="playSound('timer')">Hurry up!</button></li>
-        <li><button ng-click="playSound('sadtrombone')">Fail!</button></li>
-        <li><button ng-click="playSound('rimshot')">Ba-dum-psst!</button></li>
-      </ul>
-    </accordion-group>
-    <accordion-group heading="Scoreboard">
-      <dl class="scoreboard">
-        <dt ng-repeat-start="(person,points) in scoreboard">{{person}}</dt>
-        <dd ng-repeat-end>{{points}}</dd>
-      </dl>
-    </accordion-group>
-    <accordion-group ng-show="isReader" heading="Reader Actions" is-open="true">
-      <button ng-click="drawNewQuestion()" ng-hide="disableDrawQuestion">Draw Question</button>
-      <button ng-click="showAnswers()" ng-hide="disableShowAnswers">Show Answers</button>
-      <button ng-click="selectWinner()" ng-hide="disableSelectWinner">Select Winner</button>
-      <button ng-click="moveToNext()" ng-hide="disableMoveToNext">Move to next Player</button>
-      <p>Submitted Cards</p>
-      <ul ng-hide="disableSelectWinner" ng-repeat="player in submittedPlayers" ng-click="selected.winner = player" ng-class="{'possibleWinner': 'selected.winner == player'}">
-          <li ng-repeat="card in player.cards" class="card white">{{card.text}}</li>
-      </ul>
-      <p ng-show="disableSelectWinner" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
-    </accordion-group>
-    <accordion-group heading="My Hand" is-open="!isReader || showHand">
-      <ul>
-        <li ng-repeat="card in submittedCards" class="card white" ng-click="unselectCard($index)">{{card.text}}</li>
-      </ul>
-      <ul>
-        <li ng-repeat="card in hand" class="card white" ng-click="selectCard($index)">{{card.text}}</li>
-      </ul>
-      <button ng-hide="isReader" ng-click="submitCards(submittedCards)" ng-disabled="disableSubmit && (question.draw == submittedCards.length)">Submit Choices</button>
-    </accordion-group>
-  </accordion>
+<body ng-init="init.startup = true">
+  <div ng-show="init.startup" ng-controller="CardSetSelect">
+    <label class="cardset" ng-repeat="(value, label) in cardSets"><input type="checkbox" ng-model="cards[value]">{{label}}</label>
+    <button ng-click="submit()">Choose Card Sets</button>
+  </div>
+  <div ng-hide="init.startup" ng-controller="TableCtrl" ng-init="showHand = true">
+    <p ng-bind-html="question.text" class="card black"></p>
+    <accordion close-others="oneAtATime">
+      <accordion-group heading="Sounds">
+        <ul class="sounds">
+          <li><button ng-click="playSound('yeah')">Yeah!</button></li>
+          <li><button ng-click="playSound('boo')">Boooo!</button></li>
+          <li><button ng-click="playSound('cheer')">Cheer!</button></li>
+          <li><button ng-click="playSound('timer')">Hurry up!</button></li>
+          <li><button ng-click="playSound('sadtrombone')">Fail!</button></li>
+          <li><button ng-click="playSound('rimshot')">Ba-dum-psst!</button></li>
+        </ul>
+      </accordion-group>
+      <accordion-group heading="Scoreboard">
+        <dl class="scoreboard">
+          <dt ng-repeat-start="(person,points) in scoreboard">{{person}}</dt>
+          <dd ng-repeat-end>{{points}}</dd>
+        </dl>
+      </accordion-group>
+      <accordion-group ng-show="isReader" heading="Reader Actions" is-open="true">
+        <button ng-click="drawNewQuestion()" ng-hide="disableDrawQuestion">Draw Question</button>
+        <button ng-click="showAnswers()" ng-hide="disableShowAnswers">Show Answers</button>
+        <button ng-click="selectWinner()" ng-hide="disableSelectWinner">Select Winner</button>
+        <button ng-click="moveToNext()" ng-hide="disableMoveToNext">Move to next Player</button>
+        <p>Submitted Cards</p>
+        <ul ng-hide="disableSelectWinner" ng-repeat="player in submittedPlayers" ng-click="selected.winner = player" ng-class="{'possibleWinner': 'selected.winner == player'}">
+            <li ng-repeat="card in player.cards" class="card white">{{card.text}}</li>
+        </ul>
+        <p ng-show="disableSelectWinner" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
+      </accordion-group>
+      <accordion-group heading="My Hand" is-open="!isReader || showHand">
+        <ul>
+          <li ng-repeat="card in submittedCards" class="card white" ng-click="unselectCard($index)">{{card.text}}</li>
+        </ul>
+        <ul>
+          <li ng-repeat="card in hand" class="card white" ng-click="selectCard($index)">{{card.text}}</li>
+        </ul>
+        <button ng-hide="isReader" ng-click="submitCards(submittedCards)" ng-disabled="disableSubmit && (question.draw == submittedCards.length)">Submit Choices</button>
+      </accordion-group>
+    </accordion>
+  </div>
 
 
 <script src="//plus.google.com/hangouts/_/api/v1/hangout.js"></script>
