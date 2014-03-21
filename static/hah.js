@@ -23,7 +23,7 @@ function drawCardFromDeck(getJSONValue, setJSONValue, deckKey) {
   };
 }
 
-angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
+angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
   .factory('submitDelta', ['$timeout', function($timeout) {
     var next_submit,
         d, r;
@@ -63,6 +63,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
   .constant('scoreboardKey', 'scoreboard')
   .constant('listeningForSubmissionKey', 'listening')
   .constant('cardSetKey', 'cardSets')
+  .constant('choosingCardSetKey', 'choosingCardSets')
   .constant('shuffle', function(array) {
     var i, j, swapped,
         arrLen = array.length;
@@ -171,7 +172,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
     if (angular.isString(getJSONValue(cardSetKey))) {
       defer.resolve(getJSONValue(cardSetKey));
     }
-    return $q.defer();
+    return defer;
   }])
   .factory('whiteCards', ['$http', '$q', 'cardSetsDefer', function($http, $q, cardSetsDefer) {
     var whiteCards,
@@ -241,13 +242,19 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
   .factory('videoCanvas', [function() {
     var canvas = gapi.hangout.layout.getVideoCanvas();
 
-    canvas.setPosition(300, 0);
-    canvas.setWidth(300);
+    canvas.setPosition(500, 10);
+    canvas.setWidth(500);
     canvas.setVisible(true);
     return canvas;
   }])
+  .factory('chooseCardSet', ['getJSONValue', 'setJSONValue', 'choosingCardSetKey', function(getJSONValue, setJSONValue, choosingCardSetKey) {
+    if(!getJSONValue(choosingCardSetKey)) {
+      return setJSONValue(choosingCardSetKey, true);
+    } else {
+      return false;
+    }
+  }])
   .run(['submitDelta', 'shuffle', 'whiteCardKey', 'blackCardKey', 'currentReaderKey', 'scoreboardKey', 'localParticipantId', 'sendCards', 'whiteCards', 'blackCards', 'gameState', '$q', 'videoCanvas', function(submitDelta, shuffle, whiteCardKey, blackCardKey, currentReaderKey, scoreboardKey, localParticipantId, sendCards, whiteCards, blackCards, gameState, $q) {
-
     function saveDeck(cardKey) {
       return function(cardIds) {
         var x = {};
@@ -308,7 +315,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
     submitDelta(x);
 
   }])
-  .factory('gameState', ['activeBlackCardKey', 'currentReaderKey', 'listeningForSubmissionKey', 'scoreboardKey', 'localParticipantNewCards', 'getJSONValue', 'whiteCards', 'blackCards', '$rootScope', function(activeBlackCardKey, currentReaderKey, listeningForSubmissionKey, scoreboardKey, localParticipantNewCards, getJSONValue, whiteCards, blackCards, $rootScope) {
+  .factory('gameState', ['activeBlackCardKey', 'currentReaderKey', 'listeningForSubmissionKey', 'scoreboardKey', 'localParticipantNewCards', 'cardSetKey', 'getJSONValue', 'whiteCards', 'blackCards', '$rootScope', 'cardSetsDefer', function(activeBlackCardKey, currentReaderKey, listeningForSubmissionKey, scoreboardKey, localParticipantNewCards, cardSetKey, getJSONValue, whiteCards, blackCards, $rootScope, cardSetsDefer) {
     var item = {},
         white, black;
 
@@ -343,9 +350,10 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
             readerChange,
             canSubmit,
             newCards,
-            score;
+            score,
+            cardSets;
 
-        questionChange = readerChange = canSubmit = newCards = score = false;
+        questionChange = readerChange = canSubmit = newCards = score = cardSets = false;
 
         angular.forEach(evt.addedKeys, function(v) {
           questionChange = (v.key === activeBlackCardKey ? true : questionChange);
@@ -353,9 +361,10 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
           canSubmit = (v.key === listeningForSubmissionKey ? true : canSubmit);
           newCards = (v.key === localParticipantNewCards ? true : newCards);
           score = (v.key === scoreboardKey ? true : score);
+          cardSets = (v.key === cardSetKey ? v.value : cardSets);
         });
 
-        if(questionChange || readerChange || canSubmit || newCards || score) {
+        if(questionChange || readerChange || canSubmit || newCards || score || cardSets) {
           item.activeQuestion = (questionChange ? black[getJSONValue(activeBlackCardKey)] : item.activeQuestion);
           item.currentReader = (readerChange ? getJSONValue(currentReaderKey) : item.currentReader);
           item.canSubmit = (canSubmit ? getJSONValue(listeningForSubmissionKey) : item.canSubmit);
@@ -367,6 +376,9 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
             });
             gapi.hangout.data.clearValue(localParticipantNewCards);
           }
+          if(cardSets) {
+            cardSetsDefer.resolve(getJSONValue(cardSetKey));
+          }
           $rootScope.$apply();
         }
       });
@@ -374,14 +386,14 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
     return item;
   }])
   .controller('CardSetSelect', ['$scope', 'cardSetsDefer', 'setJSONValue', 'cardSetKey', function($scope, cardSetsDefer, setJSONValue, cardSetKey) {
-    $scope.cardSets = {
-      'base' : 'Base Set',
-      'first' : 'First Expansion',
-      'second' : 'Second Expansion',
-      'third' : 'Third Expansion',
-      'fourth' : 'Fourth Expansion',
-      'gall' : 'Cards Against Gallifrey (Doctor Who variant)'
-    };
+    $scope.cardSets = [
+      { label: 'Base Set', value: 'base' },
+      { label: 'First Expansion', value: 'first' },
+      { label: 'Second Expansion', value: 'second' },
+      { label: 'Third Expansion', value: 'third' },
+      { label: 'Fourth Expansion', value: 'fourth' },
+      { label: 'Cards Against Gallifrey (Doctor Who variant)', value: 'gall' }
+    ];
 
     $scope.cards = {};
 
@@ -394,12 +406,15 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate', 'ui.bootstrap'])
       });
       if(cards.length > 0) {
         cardSetsDefer.resolve(cards.join('+'));
-        $scope.init.startup = false;
+        $scope.initialState.choose = false;
         setJSONValue(cardSetKey, cards.join('+'));
       }
     };
   }])
-  .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'sendCards', 'playSound', 'selectWinner', function($scope, $sce, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, sendCards, playSound, selectWinner) {
+  .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'sendCards', 'playSound', 'selectWinner', 'chooseCardSet', function($scope, $sce, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, sendCards, playSound, selectWinner, chooseCardSet) {
+    $scope.initialState = {
+      choose: chooseCardSet
+    };
     var cancelReader,
         cancelNewParticipantsWatch,
         blankCard = { text: 'Waiting for a Question...' };
