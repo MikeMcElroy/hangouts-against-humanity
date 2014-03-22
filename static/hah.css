@@ -1,0 +1,112 @@
+.button {
+  border-radius: 3px;
+  -moz-border-radius: 3px;
+  background: -webkit-gradient(linear, left top, left bottom, from(#ffffff), to(#dddddd));
+  background: -moz-linear-gradient(top, #ffffff, #dddddd);
+  border: 1px solid #bbb; }
+  .button:active {
+    background: -webkit-gradient(linear, left top, left bottom, from(#aaaaaa), to(#333333));
+    background: -moz-linear-gradient(bottom, #dddddd, #aaaaaa); }
+
+li {
+  list-style-type: none; }
+
+body {
+  padding: 10px; }
+
+ul {
+  margin-top: 10px;
+  padding: 0 3% 0 3%; }
+
+dl {
+  -webkit-margin-after: 0;
+  margin: 3px; }
+
+dt, dd {
+  display: inline-block; }
+
+dt {
+  width: 70%;
+  padding-right: 5%;
+  text-align: right; }
+
+div.panel-body {
+  padding: 0;
+  max-height: 55%;
+  overflow: scroll; }
+
+.card.ng-enter {
+  -webkit-animation: bounceInRight 1s;
+  -moz-animation: bounceInRight 1s;
+  -o-animation: bounceInUp 1s;
+  animation: bounceInUp 1s; }
+.card.ng-leave {
+  -webkit-animation: bounceOutLeft 1s;
+  -moz-animation: bounceOutUp 1s;
+  -o-animation: bounceOutUp 1s;
+  animation: bounceOutUp 1s; }
+
+.leftTopColumn {
+  width: 480px;
+  height: 285px;
+  position: relative;
+  top: 0;
+  left: 0;
+  overflow: scroll; }
+
+.bottomColumn {
+  width: 100%;
+  height: 300px;
+  position: relative;
+  bottom: 0; }
+
+.card {
+  margin: 0 auto;
+  width: 100%;
+  display: inline-block;
+  border-radius: 7px;
+  font-weight: bold;
+  padding: 4px;
+  vertical-align: top;
+  border: outset 3px black;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: smaller; }
+  .card.black {
+    font-size: small; }
+
+.black {
+  background-color: black;
+  color: white;
+  min-height: 100px; }
+
+.white {
+  background-color: white;
+  color: black; }
+
+.sounds {
+  position: absolute;
+  bottom: 5px; }
+  .sounds li {
+    display: inline-block; }
+
+li.card {
+  display: inline-block;
+  height: 11rem;
+  width: 19%;
+  margin-left: 1%;
+  margin-top: -3%; }
+
+.possibleWinner {
+  border: 3px solid green; }
+
+.cardset {
+  display: block; }
+
+ul.hand {
+  display: inline-block;
+  width: 70%;
+  padding-top: 2%; }
+ul.submission {
+  padding-top: 2%;
+  display: inline-block;
+  width: 25%; }

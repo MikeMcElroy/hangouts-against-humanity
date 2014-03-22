@@ -1,0 +1,23 @@
+{
+  "name": "AppEngine",
+  "version": "0.0.0",
+  "description": "Hangouts Against Humanity",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MikeMcElroy/hangouts-against-humanity.git"
+  },
+  "author": "Mike McElroy",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/MikeMcElroy/hangouts-against-humanity/issues"
+  },
+  "homepage": "https://github.com/MikeMcElroy/hangouts-against-humanity",
+  "devDependencies": {
+    "gulp": "~3.5.6",
+    "gulp-sass": "~0.7.1"
+  }
+}
