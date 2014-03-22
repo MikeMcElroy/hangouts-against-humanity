@@ -20,149 +20,11 @@
         <Content type="html"><![CDATA[     
 
 <html>
-<style type="text/css">
-<!--
-.button {
-  border-radius: 3px;
-  -moz-border-radius: 3px;
-  background: -webkit-gradient(linear, left top, left bottom, from(#fff), to(#ddd));
-  background: -moz-linear-gradient(top, #fff, #ddd);  
-  border: 1px solid #bbb;
-}
-
-.button:active {
-        background: -webkit-gradient(linear, left top, left bottom, from(#aaa), to(#333)); 
-        background: -moz-linear-gradient(bottom, #ddd, #aaa); }
-
-li {
-  list-style-type:none;
-}
-
-body {
-    padding: 10px;
-}
-
-ul {
-    margin-top:10px;
-    padding: 0 3% 0 3%;
-}
-
-dl {
-  -webkit-margin-after: 0;
-  margin: 3px;
-}
-
-dt, dd {
-  display: inline-block;
-}
-
-dt {
-  width: 70%;
-  padding-right:5%;
-  text-align:right;
-}
-
-div.panel-body {
-  padding:0;
-  max-height:55%;
-  overflow:scroll;
-}
-
-.card.ng-enter {
-  -webkit-animation: bounceInRight 1s;
-  -moz-animation: bounceInRight 1s;
-  -o-animation: bounceInUp 1s;
-  animation: bounceInUp 1s;
-}
-
-.card.ng-leave {
-  -webkit-animation: bounceOutLeft 1s;
-  -moz-animation: bounceOutUp 1s;
-  -o-animation: bounceOutUp 1s;
-  animation: bounceOutUp 1s;
-}
-
-.leftTopColumn {
-  width:480px;
-  height:285px;
-  position:relative;
-  top:0;
-  left:0;
-  overflow:scroll;
-}
-
-.bottomColumn {
-  width: 100%;
-  height:300px;
-  position:relative;
-  bottom:0;
-}
-
-.card {
-  margin: 0 auto;
-  width: 100%;
-  display:inline-block;
-  border-radius: 7px;
-  font-weight:bold;
-  padding: 4px;
-  vertical-align:top;
-  border: outset 3px black;
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-  font-size:smaller;
-}
-
-.card.black {
-  font-size: small;
-}
-
-.black {
-  background-color: black;
-  color: white;
-  min-height: 100px;
-}
-
-.white {
-  background-color: white;
-  color: black;
-}
-
-.sounds {
-  position: absolute;
-  bottom: 5px;
-}
-
-.sounds li {
-  display: inline-block;
-}
-
-li.card {
-  display:inline-block;
-  height: 11rem;
-  width: 19%;
-  margin-left: 1%;
-  margin-top:-3%;
-}
-.possibleWinner {
-  border: 3px solid green;
-}
-
-.cardset {
-  display: block;
-}
-
-ul.hand {
-  display:inline-block;
-  width:70%;
-  padding-top: 2%;
-}
-
-ul.submission {
-  padding-top: 2%;
-  display:inline-block;
-  width:25%;
-}
--->
-</style>
+<head>
+  <link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="//hangouts-against-humanity.appspot.com/static/animate.css" rel="stylesheet" />
+  <link href="//hangouts-against-humanity.appspot.com/static/hah.css" rel="stylesheet" />
+</head>
 <body ng-controller="TableCtrl">
   <div ng-if="initialState.choose" class="leftTopColumn" ng-controller="CardSetSelect">
     <label class="cardset" ng-repeat="sets in cardSets track by sets.label"><input type="checkbox" ng-model="cards[sets.value]">{{sets.label}}</label>
@@ -185,6 +47,11 @@ ul.submission {
         </ul>
         <p ng-show="disableSelectWinner" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
     </div>
+    <div ng-if="!isReader">
+      <ul class="submission" ng-class="(1 < question.draw ? 'double' : 'single')">
+        <li ng-repeat="card in submittedCards" class="card white" ng-click="unselectCard($index)">{{card.text}}</li>
+      </ul>
+    </div>
     <ul class="sounds">
       <li><button ng-click="playSound('yeah')">Yeah!</button></li>
       <li><button ng-click="playSound('boo')">Boooo!</button></li>
@@ -198,9 +65,6 @@ ul.submission {
     <button ng-hide="isReader" ng-click="submitCards(submittedCards)" ng-disabled="disableSubmit && (question.draw == submittedCards.length)">Submit Choices</button>
     <ul class="hand">
       <li ng-repeat="card in hand" class="card white" ng-click="selectCard($index)">{{card.text}}</li>
-    </ul>
-    <ul class="submission">
-      <li ng-repeat="card in submittedCards" class="card white" ng-click="unselectCard($index)">{{card.text}}</li>
     </ul>
   </div>
 
@@ -223,8 +87,6 @@ function init() {
 // Wait for gadget to load.
 gadgets.util.registerOnLoadHandler(init);
 </script>
-<link href="//hangouts-against-humanity.appspot.com/static/animate.css" rel="stylesheet" />
-<link href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css" rel="stylesheet" />
 
 </body>
 </html>

@@ -222,7 +222,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       var x = {},
           scores = getJSONValue(scoreboardKey);
 
-      scores[participant] = scores[participant]++;
+      scores[participant] += 1;
       x[scoreboardKey] = scores;
 
       submitDelta(x);
@@ -541,7 +541,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       $scope.disableSelectWinner = true;
 
       $scope.submittedPlayers = [];
-      if("0" !== newQuestion.draw) {
+      if(angular.isString(newQuestion.draw) && ("0" !== newQuestion.draw)) {
         sendCards(gapi.hangout.getEnabledParticipants().map(function(p) { return p.id; }), newQuestion.draw);
       }
 
