@@ -26,6 +26,45 @@
   <link href="//hangouts-against-humanity.appspot.com/static/hah.css" rel="stylesheet" />
 </head>
 <body ng-controller="TableCtrl">
+
+<div ng-if="initialState.choose" class="leftTopColumn" ng-controller="CardSetSelect">
+  <label class="cardset" ng-repeat="sets in cardSets track by sets.label"><input type="checkbox" ng-model="cards[sets.value]">{{sets.label}}</label>
+  <button ng-click="submit()">Choose Card Sets</button>
+</div>
+<div class="leftColumn">
+  <div class="card black" ng-bind-html="question.text"></div>
+  <div class="scoreboard">
+    <span class="nameAndScore" ng-repeat="(person, points) in scoreboard"><span class="displayName">{{person}}</span><span class="score">{{points}}</span></span>
+  </div>
+  <div ng-if="isReader">
+      <button ng-click="drawNewQuestion()" ng-hide="disableDrawQuestion">Draw Question</button>
+      <button ng-click="showAnswers()" ng-hide="disableShowAnswers">Show Answers</button>
+      <button ng-click="selectWinner()" ng-hide="disableSelectWinner">Select Winner</button>
+      <button ng-click="moveToNext()" ng-hide="disableMoveToNext">Move to next Player</button>
+      <p ng-show="disableSelectWinner" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
+  </div>
+  <div class="sounds">
+    <button ng-click="playSound('yeah')">Yeah!</button>
+    <button ng-click="playSound('boo')">Boooo!</button>
+    <button ng-click="playSound('cheer')">Cheer!</button>
+    <button ng-click="playSound('timer')">Hurry up!</button>
+    <button ng-click="playSound('sadtrombone')">Fail!</button>
+    <button ng-click="playSound('rimshot')">Ba-dum-psst!</button>
+  </div>
+</div>
+<div class="bottomColumn" ng-class="{'reader' : 'isReader', 'offToSide' : '!viewHand'}">
+  <div class="submittedCards" ng-if="isReader">
+    <div class="submission" ng-repeat="submission in submittedPlayers" ng-click="selected.winner = submission" ng-class="{'selected' : 'selected.winner == submission'}">
+      <div class="card white" ng-repeat="card in submission.cards"><span class="cardText" ng-bind-html="card.text"></span></div>
+    </div>
+  </div>
+  <div class="handle" ng-if="isReader" ng-click="viewHand = !viewHand">
+    <span>Submitted Cards</span>
+  </div>
+  <div class="hand">
+    <div class="card white" ng-repeat="card in hand"><span class="cardText" ng-bind-html="card.text"></span></div>
+  </div>
+</div>
   <div ng-if="initialState.choose" class="leftTopColumn" ng-controller="CardSetSelect">
     <label class="cardset" ng-repeat="sets in cardSets track by sets.label"><input type="checkbox" ng-model="cards[sets.value]">{{sets.label}}</label>
     <button ng-click="submit()">Choose Card Sets</button>
@@ -41,10 +80,6 @@
         <button ng-click="showAnswers()" ng-hide="disableShowAnswers">Show Answers</button>
         <button ng-click="selectWinner()" ng-hide="disableSelectWinner">Select Winner</button>
         <button ng-click="moveToNext()" ng-hide="disableMoveToNext">Move to next Player</button>
-        <p>Submitted Cards</p>
-        <ul ng-hide="disableSelectWinner" ng-repeat="player in submittedPlayers" ng-click="selected.winner = player" ng-class="{'possibleWinner': 'selected.winner == player'}">
-            <li ng-repeat="card in player.cards" class="card white">{{card.text}}</li>
-        </ul>
         <p ng-show="disableSelectWinner" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
     </div>
     <div ng-if="!isReader">
@@ -52,16 +87,16 @@
         <li ng-repeat="card in submittedCards" class="card white" ng-click="unselectCard($index)">{{card.text}}</li>
       </ul>
     </div>
-    <ul class="sounds">
-      <li><button ng-click="playSound('yeah')">Yeah!</button></li>
-      <li><button ng-click="playSound('boo')">Boooo!</button></li>
-      <li><button ng-click="playSound('cheer')">Cheer!</button></li>
-      <li><button ng-click="playSound('timer')">Hurry up!</button></li>
-      <li><button ng-click="playSound('sadtrombone')">Fail!</button></li>
-      <li><button ng-click="playSound('rimshot')">Ba-dum-psst!</button></li>
-    </ul>
   </div>
-  <div ng-if="!initialState.choose" class="bottomColumn">
+  <div ng-if="!initialState.choose" ng-init="viewHand = true" class="bottomColumn">
+    <div ng-if="isReader && !disableSelectWinner" class="submittedHands" ng-class="(viewHand ? 'offToSide' : '')">
+      <ul ng-hide="disableSelectWinner" ng-repeat="player in submittedPlayers" ng-click="selected.winner = player" ng-class="{'possibleWinner': 'selected.winner == player'}">
+            <li ng-repeat="card in player.cards" class="card white">{{card.text}}</li>
+        </ul>
+      <div class="handle" ng-click="viewHand = !viewHand">
+        <span ng-class="(submittedCards.length > 0 ? 'asterisk' : '')" class="text">Submitted Hands</span>
+      </div>
+    </div>
     <button ng-hide="isReader" ng-click="submitCards(submittedCards)" ng-disabled="disableSubmit && (question.draw == submittedCards.length)">Submit Choices</button>
     <ul class="hand">
       <li ng-repeat="card in hand" class="card white" ng-click="selectCard($index)">{{card.text}}</li>

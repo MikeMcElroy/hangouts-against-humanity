@@ -64,6 +64,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
   .constant('listeningForSubmissionKey', 'listening')
   .constant('cardSetKey', 'cardSets')
   .constant('choosingCardSetKey', 'choosingCardSets')
+  .constant('RANDO_CARDRISSIAN_ID', 'RANDO_CARDRISSIAN')
   .constant('shuffle', function(array) {
     var i, j, swapped,
         arrLen = array.length;
@@ -88,9 +89,13 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
   }])
   .factory('drawWhiteCards', ['getJSONValue', 'setJSONValue', 'whiteCardKey', drawCardFromDeck])
   .factory('drawBlackCards', ['getJSONValue', 'setJSONValue', 'blackCardKey', drawCardFromDeck])
-  .factory('drawNewQuestion', ['drawBlackCards', 'setJSONValue', 'activeBlackCardKey', function(drawBlackCards, setJSONValue, activeBlackCardKey) {
+  .factory('drawNewQuestion', ['drawBlackCards', 'setJSONValue', 'activeBlackCardKey', 'blackCards', function(drawBlackCards, setJSONValue, activeBlackCardKey, blackCards) {
     return function() {
-      return setJSONValue(activeBlackCardKey, drawBlackCards(1)[0]);
+      var newCardIndex = drawBlackCards(1)[0];
+      setJSONValue(activeBlackCardKey, newCardIndex);
+      return blackCards().then(function(cards) {
+        return cards[newCardIndex];
+      });
     };
   }])
   .factory('submitCards', ['setJSONValue', 'localParticipantCards', 'whiteCards', function(setJSONValue, localParticipantCards, whiteCards) {
@@ -121,15 +126,25 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       return cancel;
     };
   }])
-  .factory('watchForSubmittedCards', ['$filter', 'getJSONValue', 'submitDelta', 'listeningForSubmissionKey', 'whiteCards', function($filter, getJSONValue, submitDelta, listeningForSubmissionKey, whiteCards) {
+  .factory('watchForSubmittedCards', ['$filter', 'getJSONValue', 'submitDelta', 'listeningForSubmissionKey', 'whiteCards', 'RANDO_CARDRISSIAN_ID', function($filter, getJSONValue, submitDelta, listeningForSubmissionKey, whiteCards, RANDO_CARDRISSIAN_ID) {
     return function(callback) {
       var func = function(evt) {
             var newCards = $filter('filter')(evt.addedKeys, function(x) {
               return x.key.search('cards_') === 0;
             });
+            var rando_hand = $filter('filter')(evt.addedKeys, function(x) {
+              return x.key === RANDO_CARDRISSIAN_ID;
+            });
+            angular.forEach(rando_hand, function(r_obj) {
+              r_obj.lastWriter = RANDO_CARDRISSIAN_ID;
+            });
+
+            newCards = newCards.concat(rando_hand);
+
             whiteCards().then(function(white) {
               angular.forEach(newCards, function(obj) {
                 obj.value = getJSONValue(obj.key);
+
                 angular.forEach(obj.value, function(cardId, i) {
                   obj.value[i] = white[cardId];
                 });
@@ -217,26 +232,34 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       submitDelta(delta);
     };
   }])
-  .factory('selectWinner', ['submitDelta', 'getJSONValue', 'scoreboardKey', function(submitDelta, getJSONValue, scoreboardKey) {
+  .factory('selectWinner', ['submitDelta', 'getJSONValue', 'scoreboardKey', 'RANDO_CARDRISSIAN_ID', function(submitDelta, getJSONValue, scoreboardKey, RANDO_CARDRISSIAN_ID) {
     return function(participant) {
       var x = {},
           scores = getJSONValue(scoreboardKey);
 
-      scores[participant] += 1;
+      participant = (participant === RANDO_CARDRISSIAN_ID ? 'Rando Cardrissian' : gapi.hangout.getParticipantById(participant).person.displayName);
+      scores[participant] = (scores[participant] || 0) + 1;
       x[scoreboardKey] = scores;
 
       submitDelta(x);
     };
   }])
+  .factory('randoPlayerDraws', ['submitDelta', 'RANDO_CARDRISSIAN_ID', 'drawWhiteCards', function(submitDelta, RANDO_CARDRISSIAN_ID, drawWhiteCards) {
+    return function(pick) {
+      var x = {};
+      x[RANDO_CARDRISSIAN_ID] = drawWhiteCards(pick);
+      submitDelta(x);
+    };
+  }])
   .factory('playSound', [function() {
     return {
-          yeah: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/yeah.wav').createSound(),
-          boo: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/boo.wav').createSound(),
-          cheer: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/cheer.wav').createSound(),
-          ready: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/ready-here-we-go.wav').createSound(),
-          timer: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/timer.wav').createSound(),
-          sadtrombone: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/sadtrombone.wav').createSound(),
-          rimshot: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/rimshot.wav').createSound()
+          yeah: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/yeah.wav').createSound({localOnly: false, loop: false}),
+          boo: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/boo.wav').createSound({localOnly: false, loop: false}),
+          cheer: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/cheer.wav').createSound({localOnly: false, loop: false}),
+          ready: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/ready-here-we-go.wav').createSound({localOnly: true, loop: false}),
+          timer: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/timer.wav').createSound({localOnly: false, loop: false}),
+          sadtrombone: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/sadtrombone.wav').createSound({localOnly: false, loop: false}),
+          rimshot: gapi.hangout.av.effects.createAudioResource('//hangouts-against-humanity.appspot.com/static/audio/rimshot.wav').createSound({localOnly: false, loop: false})
         };
   }])
   .factory('videoCanvas', [function() {
@@ -315,7 +338,7 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
     submitDelta(x);
 
   }])
-  .factory('gameState', ['activeBlackCardKey', 'currentReaderKey', 'listeningForSubmissionKey', 'scoreboardKey', 'localParticipantNewCards', 'cardSetKey', 'getJSONValue', 'whiteCards', 'blackCards', '$rootScope', 'cardSetsDefer', function(activeBlackCardKey, currentReaderKey, listeningForSubmissionKey, scoreboardKey, localParticipantNewCards, cardSetKey, getJSONValue, whiteCards, blackCards, $rootScope, cardSetsDefer) {
+  .factory('gameState', ['activeBlackCardKey', 'currentReaderKey', 'listeningForSubmissionKey', 'scoreboardKey', 'localParticipantNewCards', 'cardSetKey', 'getJSONValue', 'whiteCards', 'blackCards', '$rootScope', 'cardSetsDefer', 'localParticipantId', function(activeBlackCardKey, currentReaderKey, listeningForSubmissionKey, scoreboardKey, localParticipantNewCards, cardSetKey, getJSONValue, whiteCards, blackCards, $rootScope, cardSetsDefer, localParticipantId) {
     var item = {},
         white, black;
 
@@ -383,6 +406,26 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
         }
       });
 
+    item.ChangeOfActiveQuestion = function ChangeOfActiveQuestion() {
+      return item.activeQuestion;
+    };
+
+    item.AmICurrentReader = function AmICurrentReader() {
+      return item.currentReader === localParticipantId;
+    };
+
+    item.CanSubmit = function CanSubmit() {
+      return item.canSubmit;
+    };
+
+    item.NewCardsDealt = function NewCardsDealt() {
+      return item.newCards;
+    };
+
+    item.ScoreChange = function ScoreChange() {
+      return item.score;
+    };
+
     return item;
   }])
   .controller('CardSetSelect', ['$scope', 'cardSetsDefer', 'setJSONValue', 'cardSetKey', function($scope, cardSetsDefer, setJSONValue, cardSetKey) {
@@ -411,39 +454,26 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       }
     };
   }])
-  .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'localParticipantId', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'sendCards', 'playSound', 'selectWinner', 'chooseCardSet', function($scope, $sce, gameState, localParticipantId, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, sendCards, playSound, selectWinner, chooseCardSet) {
+  .controller('TableCtrl', ['$scope', '$sce', 'gameState', 'submitCards', 'watchForSubmittedCards', 'drawNewQuestion', 'watchForNewParticipants', 'transferToNextPlayer', 'sendCards', 'playSound', 'selectWinner', 'chooseCardSet', 'randoPlayerDraws', function($scope, $sce, gameState, submitCards, watchForSubmittedCards, drawNewQuestion, watchForNewParticipants, transferToNextPlayer, sendCards, playSound, selectWinner, chooseCardSet, randoPlayerDraws) {
+
+    function convertCardTextToTrustedHtml(card) {
+      card.text = $sce.trustAsHtml(card.text);
+      return card;
+    }
+
+    var cancelReader,
+        cancelNewParticipantsWatch,
+        blankCard = convertCardTextToTrustedHtml({ text: 'Waiting for a Question...' });
+
     $scope.initialState = {
       choose: chooseCardSet
     };
-    var cancelReader,
-        cancelNewParticipantsWatch,
-        blankCard = { text: 'Waiting for a Question...' };
-
-    function ChangeOfActiveQuestion() {
-      return gameState.activeQuestion;
-    }
-
-    function AmICurrentReader() {
-      return gameState.currentReader === localParticipantId;
-    }
-
-    function CanSubmit() {
-      return gameState.canSubmit;
-    }
-
-    function NewCardsDealt() {
-      return gameState.newCards;
-    }
-
-    function ScoreChange() {
-      return gameState.score;
-    }
 
     $scope.hand = [];
     $scope.submittedCards = [];
 
     $scope.playSound = function(sound) {
-      playSound[sound].play({loop: false, global: true});
+      playSound[sound].play();
     };
 
     $scope.selectCard = function(index) {
@@ -465,20 +495,20 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
 
     $scope.isReader = false;
 
-    $scope.$watch(ChangeOfActiveQuestion, function(newVal) {
+    $scope.$watch(gameState.ChangeOfActiveQuestion, function(newVal) {
+      var card = blankCard;
       $scope.disableSubmit = !newVal;
-      $scope.question = (!!newVal ? newVal : blankCard);
-      $scope.question.text = $sce.trustAsHtml($scope.question.text);
+      if (!!newVal) {
+        card = convertCardTextToTrustedHtml(newVal);
+      }
+      $scope.question = card;
     });
 
-    $scope.$watch(AmICurrentReader, function(newVal) {
+    $scope.$watch(gameState.AmICurrentReader, function(newVal) {
       $scope.isReader = newVal;
-      if(newVal) {
+      if(!!newVal) {
         $scope.submittedPlayers = [];
-        $scope.disableDrawQuestion = false;
-        $scope.disableShowAnswers = true;
-        $scope.disableMoveToNext = true;
-        $scope.disableSelectWinner = true;
+        $scope.disableDrawQuestion = !($scope.disableShowAnswers = $scope.disableMoveToNext = $scope.disableSelectWinner = true);
 
         cancelNewParticipantsWatch = watchForNewParticipants(function(participants) {
           sendCards(participants.map(function(p) { return p.id; }), 10);
@@ -486,27 +516,24 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
       }
     });
 
-    $scope.$watch(CanSubmit, function(newVal) {
+    $scope.$watch(gameState.CanSubmit, function(newVal) {
       $scope.disableSubmit = !newVal;
     });
 
-    $scope.$watch(NewCardsDealt, function(newVal) {
+    $scope.$watch(gameState.NewCardsDealt, function(newVal) {
       if(angular.isArray(newVal)) {
-        $scope.hand = $scope.hand.concat(newVal);
+        $scope.hand = $scope.hand.concat(newVal.map(convertCardTextToTrustedHtml));
       }
     });
 
-    $scope.$watch(ScoreChange, function(newScore) {
+    $scope.$watch(gameState.ScoreChange, function(newScore) {
       $scope.scoreboard = newScore;
     });
 
     /* Dealer-specific */
     $scope.moveToNext = function() {
 
-      $scope.disableDrawQuestion = true;
-      $scope.disableShowAnswers = true;
-      $scope.disableMoveToNext = true;
-      $scope.disableSelectWinner = true;
+      $scope.disableDrawQuestion = !($scope.disableShowAnswers = $scope.disableMoveToNext = $scope.disableSelectWinner = true);
 
       transferToNextPlayer();
       sendCards($scope.submittedPlayers.map(function(p) { return p.player; }), $scope.question.pick - $scope.question.draw );
@@ -517,43 +544,42 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
     $scope.showAnswers = function() {
       cancelReader();
 
-      $scope.disableDrawQuestion = true;
-      $scope.disableShowAnswers = true;
-      $scope.disableMoveToNext = true;
-      $scope.disableSelectWinner = false;
+      $scope.disableSelectWinner = !($scope.disableDrawQuestion = $scope.disableShowAnswers = $scope.disableMoveToNext = true);
     };
 
     $scope.selected = {};
     $scope.selectWinner = function() {
-      selectWinner(gapi.hangout.getParticipantById($scope.selected.winner.player).person.displayName);
+      selectWinner($scope.selected.winner.player);
       $scope.selected = {};
-      $scope.disableDrawQuestion = true;
-      $scope.disableShowAnswers = true;
-      $scope.disableMoveToNext = false;
-      $scope.disableSelectWinner = true;
+
+      $scope.disableMoveToNext = !($scope.disableDrawQuestion = $scope.disableShowAnswers = $scope.disableSelectWinner = true);
     };
 
     $scope.drawNewQuestion = function() {
-      var newQuestion = drawNewQuestion();
-      $scope.disableDrawQuestion = true;
-      $scope.disableShowAnswers = false;
-      $scope.disableMoveToNext = true;
-      $scope.disableSelectWinner = true;
-
+      $scope.disableShowAnswers = !($scope.disableDrawQuestion = $scope.disableMoveToNext = $scope.disableSelectWinner = true);
       $scope.submittedPlayers = [];
-      if(angular.isString(newQuestion.draw) && ("0" !== newQuestion.draw)) {
-        sendCards(gapi.hangout.getEnabledParticipants().map(function(p) { return p.id; }), newQuestion.draw);
-      }
+
+      drawNewQuestion().then(function(newQuestion) {
+        var draw = parseInt(newQuestion.draw, 10),
+            pick = parseInt(newQuestion.pick, 10);
+
+        if(angular.isString(newQuestion.draw) && (0 !== draw)) {
+          sendCards(gapi.hangout.getEnabledParticipants().map(function(p) { return p.id; }), newQuestion.draw);
+        }
+
+        // Draw Rando Cardrissian card(s)
+        randoPlayerDraws(pick);
+      });
 
       cancelReader = watchForSubmittedCards(function(newSubmissions) {
         angular.forEach(newSubmissions, function(submission) {
           $scope.submittedPlayers.push({
               player: submission.lastWriter,
-              cards: submission.value
+              cards: submission.value.map(convertCardTextToTrustedHtml)
           });
         });
-        if($scope.submittedPlayers.length === gapi.hangout.getEnabledParticipants().length - 1) {
-          playSound.ready.play({loop: false, global: false});
+        if($scope.submittedPlayers.length === gapi.hangout.getEnabledParticipants().length) {
+          playSound.ready.play();
         }
       });
     };
