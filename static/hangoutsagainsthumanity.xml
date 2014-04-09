@@ -36,7 +36,8 @@
   <div class="scoreboard">
     <span class="nameAndScore" ng-repeat="(person, points) in scoreboard"><span class="displayName">{{person}}</span><span class="score">{{points}}</span></span>
   </div>
-  <div ng-if="isReader">
+  <div class="actions">
+      <button ng-hide="isReader" ng-click="submitCards()" ng-disabled="disableSubmit && (question.draw == submittedCards.length)">Submit Choices</button>
       <button ng-click="drawNewQuestion()" ng-hide="disableDrawQuestion">Draw Question</button>
       <button ng-click="showAnswers()" ng-hide="disableShowAnswers">Show Answers</button>
       <button ng-click="selectWinner()" ng-hide="disableSelectWinner">Select Winner</button>
@@ -55,55 +56,16 @@
 <div class="bottomColumn" ng-class="{'reader' : 'isReader', 'offToSide' : '!viewHand'}">
   <div class="submittedCards" ng-if="isReader">
     <div class="submission" ng-repeat="submission in submittedPlayers" ng-click="selected.winner = submission" ng-class="{'selected' : 'selected.winner == submission'}">
-      <div class="card white" ng-repeat="card in submission.cards"><span class="cardText" ng-bind-html="card.text"></span></div>
+      <div class="card white" ng-repeat="card in submission.cards" ng-class="{}"><span class="cardText" ng-bind-html="card.text"></span></div>
     </div>
   </div>
   <div class="handle" ng-if="isReader" ng-click="viewHand = !viewHand">
     <span>Submitted Cards</span>
   </div>
   <div class="hand">
-    <div class="card white" ng-repeat="card in hand"><span class="cardText" ng-bind-html="card.text"></span></div>
+    <div class="card white" ng-repeat="card in hand" ng-class="{'selected' : 'card.selected', 'first' : 'card.selected == \'first\', 'second' : 'card.selected == \'second\'', 'third' : 'card.selected == \'third\'' }"><span class="cardText" ng-bind-html="card.text"></span></div>
   </div>
 </div>
-  <div ng-if="initialState.choose" class="leftTopColumn" ng-controller="CardSetSelect">
-    <label class="cardset" ng-repeat="sets in cardSets track by sets.label"><input type="checkbox" ng-model="cards[sets.value]">{{sets.label}}</label>
-    <button ng-click="submit()">Choose Card Sets</button>
-  </div>
-  <div ng-if="!initialState.choose" class="leftTopColumn">
-    <div ng-bind-html="question.text" class="card black"></div>
-    <dl class="scoreboard">
-      <dt ng-repeat-start="(person,points) in scoreboard">{{person}}</dt>
-      <dd ng-repeat-end>{{points}}</dd>
-    </dl>
-    <div ng-if="isReader">
-        <button ng-click="drawNewQuestion()" ng-hide="disableDrawQuestion">Draw Question</button>
-        <button ng-click="showAnswers()" ng-hide="disableShowAnswers">Show Answers</button>
-        <button ng-click="selectWinner()" ng-hide="disableSelectWinner">Select Winner</button>
-        <button ng-click="moveToNext()" ng-hide="disableMoveToNext">Move to next Player</button>
-        <p ng-show="disableSelectWinner" ng-pluralize count="submittedPlayers.length" when="{'0': 'No submissions', '1': '1 submission', 'other': '{} submissions'}"></p>
-    </div>
-    <div ng-if="!isReader">
-      <ul class="submission" ng-class="(1 < question.draw ? 'double' : 'single')">
-        <li ng-repeat="card in submittedCards" class="card white" ng-click="unselectCard($index)">{{card.text}}</li>
-      </ul>
-    </div>
-  </div>
-  <div ng-if="!initialState.choose" ng-init="viewHand = true" class="bottomColumn">
-    <div ng-if="isReader && !disableSelectWinner" class="submittedHands" ng-class="(viewHand ? 'offToSide' : '')">
-      <ul ng-hide="disableSelectWinner" ng-repeat="player in submittedPlayers" ng-click="selected.winner = player" ng-class="{'possibleWinner': 'selected.winner == player'}">
-            <li ng-repeat="card in player.cards" class="card white">{{card.text}}</li>
-        </ul>
-      <div class="handle" ng-click="viewHand = !viewHand">
-        <span ng-class="(submittedCards.length > 0 ? 'asterisk' : '')" class="text">Submitted Hands</span>
-      </div>
-    </div>
-    <button ng-hide="isReader" ng-click="submitCards(submittedCards)" ng-disabled="disableSubmit && (question.draw == submittedCards.length)">Submit Choices</button>
-    <ul class="hand">
-      <li ng-repeat="card in hand" class="card white" ng-click="selectCard($index)">{{card.text}}</li>
-    </ul>
-  </div>
-
-
 <script src="//plus.google.com/hangouts/_/api/v1/hangout.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.12/angular.min.js"></script>
 <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.12/angular-animate.min.js"></script>

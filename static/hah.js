@@ -463,32 +463,51 @@ angular.module('HangoutsAgainstHumanity', ['ngAnimate'])
 
     var cancelReader,
         cancelNewParticipantsWatch,
-        blankCard = convertCardTextToTrustedHtml({ text: 'Waiting for a Question...' });
+        blankCard = convertCardTextToTrustedHtml({ text: 'Waiting for a Question...', pick: 0 });
 
     $scope.initialState = {
       choose: chooseCardSet
     };
 
     $scope.hand = [];
-    $scope.submittedCards = [];
+    var submittedCards = {
+      'first': undefined,
+      'second': undefined,
+      'third': undefined
+    };
 
     $scope.playSound = function(sound) {
       playSound[sound].play();
     };
 
+    function findIndexOfValueWithinN(value, n) {
+      for( var i = 0, k = Object.keys(submittedCards).sort(); i < k.length && i < n; i++ ) {
+        if(submittedCards[k[i]] === value) {
+          return k[i];
+        }
+      }
+    }
+
     $scope.selectCard = function(index) {
       if(!$scope.isReader) {
-        $scope.submittedCards.push($scope.hand.splice(index, 1)[0]);
+        var alreadySelected = findIndexOfValueWithinN(index, 3),
+            position = findIndexOfValueWithinN(undefined, $scope.question.pick);
+
+        if(!!alreadySelected) {
+          $scope.hand[index].selected = false;
+          submittedCards[alreadySelected] = undefined;
+        } else if (!!position) {
+          $scope.hand[index].selected = position;
+          submittedCards[position] = index;
+        }
+        // Cannot select more than the question allows you to pick
+        // else { }
       }
     };
 
-    $scope.unselectCard = function(index) {
-      $scope.hand.push($scope.submittedCards.splice(index, 1)[0]);
-    };
-
     $scope.disableSubmit = false;
-    $scope.submitCards = function(cards) {
-      submitCards(cards);
+    $scope.submitCards = function() {
+      submitCards($scope.submittedCards);
       $scope.submittedCards = [];
       $scope.disableSubmit = true;
     };
